@@ -426,6 +426,42 @@ def parse_sheet(df: pd.DataFrame, sheet: str, year_tag: str) -> list[QuestionBlo
     return blocks
 
 
+def _coalesce_same_label_series(block: QuestionBlock) -> None:
+    """If the parser added multiple rows with the same label (e.g. two 'Year 2' series),
+    keep a single series: prefer the row whose counts sum to the largest n (fullest row)."""
+    n_o = len(block.option_labels)
+    if n_o == 0 or not block.series:
+        return
+    by_label: dict[str, list[SeriesRow]] = {}
+    order: list[str] = []
+    for s in block.series:
+        if s.label not in by_label:
+            order.append(s.label)
+            by_label[s.label] = []
+        by_label[s.label].append(s)
+
+    out: list[SeriesRow] = []
+    for label in order:
+        rows = by_label[label]
+        if len(rows) == 1:
+            r = rows[0]
+            pad = list(r.counts[:n_o]) if r.counts else [0.0] * n_o
+            while len(pad) < n_o:
+                pad.append(0.0)
+            out.append(SeriesRow(label=label, counts=pad, percents=r.percents))
+            continue
+        def _total(r: SeriesRow) -> float:
+            c = (r.counts or [])[:n_o]
+            return float(np.nansum(c))
+
+        best = max(rows, key=_total)
+        pad = list((best.counts or [])[:n_o])
+        while len(pad) < n_o:
+            pad.append(0.0)
+        out.append(SeriesRow(label=label, counts=pad, percents=best.percents))
+    block.series = out
+
+
 def clean_block(block: QuestionBlock) -> QuestionBlock | None:
     if "10. If YES" in block.question and "temperature" in block.question.lower():
         return None
@@ -439,7 +475,8 @@ def clean_block(block: QuestionBlock) -> QuestionBlock | None:
             seen.add(key)
             series2.append(s)
     block.series = series2
-    return block if series2 else None
+    _coalesce_same_label_series(block)
+    return block if block.series else None
 
 
 def load_all_blocks(path: Path, year: str) -> dict[str, list[QuestionBlock]]:
@@ -502,8 +539,10 @@ def plot_block(
     n_s = len(pcts)
 
     colors = _series_colors(labels)
-    width = min(0.80 / max(n_s, 1), 0.25)
-    fig_w = max(7.5, 0.5 * n_o * n_s + 2.5)
+    # Wider bars: old formula capped at 0.25 so single-series charts looked anemic; use
+    # most of the unit width per category without overlap between groups.
+    width = min(0.9 / max(n_s, 1), 0.62)
+    fig_w = max(6.2, 0.52 * n_o * (1.0 + 0.22 * max(0, n_s - 1)) + 1.8)
     fig, ax = plt.subplots(figsize=(fig_w, 4.8))
 
     x = np.arange(n_o)
@@ -557,9 +596,9 @@ def plot_y1_y2_comparison(b1: QuestionBlock, b2: QuestionBlock, out_path: Path) 
     p1 = [x * 100 for x in counts_to_percent(s1.counts[:n])]
     p2 = [x * 100 for x in counts_to_percent(s2.counts[:n])]
 
-    w = 0.36
+    w = 0.42
     x = np.arange(n)
-    fig, ax = plt.subplots(figsize=(max(7.5, 0.55 * n + 3.5), 4.8))
+    fig, ax = plt.subplots(figsize=(max(6.2, 0.52 * n + 1.6), 4.8))
     ax.bar(x - w / 2, p1, w, label="Year 1 (all festival dates)", color=COL_ALL, edgecolor="white")
     ax.bar(x + w / 2, p2, w, label="Year 2 (all respondents)", color=COL_Y2_COMP, edgecolor="white")
     ax.set_ylabel("Percent of respondents", fontsize=9)
