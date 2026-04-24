@@ -1273,6 +1273,96 @@ def hobo_calibration_before_after_plots(
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
+def hobo_departure_from_mean(all_h: pd.DataFrame) -> None:
+    """Daily temperature departure of each site from the network daily mean."""
+    daily = _hobo_daily_means(all_h)
+    # Network mean per date
+    net_mean = daily.groupby("date")["temp_f"].mean().rename("mean_temp")
+    daily = daily.join(net_mean, on="date")
+    daily["departure"] = daily["temp_f"] - daily["mean_temp"]
+
+    sites = sorted(daily["site"].unique())
+    fig, ax = plt.subplots(figsize=(10.5, 4.5))
+    for site in sites:
+        sub = daily[daily["site"] == site].sort_values("date")
+        ax.plot(
+            sub["date"], sub["departure"],
+            marker="o", ms=3, lw=1.8,
+            label=SITE_LABELS[site], color=SITE_COLORS[site],
+        )
+    ax.axhline(0, color="#666", lw=1, linestyle="--", zorder=1)
+    ax.set_ylabel("Departure from network mean (°F)")
+    ax.set_xlabel("Date (CDT)")
+    ax.set_title(
+        "HOBO: daily temperature departure from network mean",
+        fontsize=13, fontweight="bold", pad=10, loc="center",
+    )
+    _style_hobo_date_axis(ax)
+    fig.autofmt_xdate(rotation=30, ha="right")
+    ax.legend(ncol=1, loc="upper right", fontsize=8.5)
+    clean_ax(ax)
+    fig.tight_layout()
+    out = OUT / "hobo_departure_from_mean.png"
+    fig.savefig(out, dpi=180, bbox_inches="tight")
+    plt.close(fig)
+    print("Wrote", out)
+
+
+def kestrel_departure_from_mean(df: pd.DataFrame) -> None:
+    """Per-visit air temperature departure of each site from the same-window network mean."""
+    cols = ["visit_date", "period_key", "site", "air_temp_f"]
+    sub = df[cols].dropna(subset=["air_temp_f"]).copy()
+    # Network mean per (visit_date, period_key)
+    win_mean = (
+        sub.groupby(["visit_date", "period_key"])["air_temp_f"]
+        .mean()
+        .rename("mean_temp")
+    )
+    sub = sub.join(win_mean, on=["visit_date", "period_key"])
+    sub["departure"] = sub["air_temp_f"] - sub["mean_temp"]
+    sub["window"] = sub["visit_date"].astype(str) + " " + sub["period_key"]
+
+    sites = sorted(sub["site"].unique())
+    # Pivot for grouped bar chart
+    windows = sub["window"].unique()
+    windows_sorted = sorted(windows)
+    x = np.arange(len(windows_sorted))
+    bar_w = 0.18
+    offsets = np.linspace(-(len(sites)-1)*bar_w/2, (len(sites)-1)*bar_w/2, len(sites))
+
+    # Aggregate departure per (window, site) in case of duplicates
+    site_dep_map = (
+        sub.groupby(["window", "site"])["departure"].mean().unstack("site")
+    )
+
+    fig, ax = plt.subplots(figsize=(12, 5))
+    for i, site in enumerate(sites):
+        heights = [
+            float(site_dep_map.loc[w, site]) if w in site_dep_map.index and site in site_dep_map.columns else np.nan
+            for w in windows_sorted
+        ]
+        ax.bar(
+            x + offsets[i], heights, width=bar_w * 0.9,
+            color=SITE_COLORS[site], label=SITE_LABELS[site], zorder=3,
+        )
+    ax.axhline(0, color="#666", lw=1, linestyle="--", zorder=2)
+    ax.set_xticks(x)
+    ax.set_xticklabels(windows_sorted, rotation=35, ha="right", fontsize=8)
+    ax.set_xlabel("Visit window", fontsize=9, color="#555555", labelpad=6)
+    ax.set_ylabel("Departure from mean (°F)")
+    ax.set_title(
+        "Kestrel: air temperature departure from same-visit network mean",
+        fontsize=13, fontweight="bold", pad=10, loc="center",
+    )
+    ax.legend(ncol=1, loc="upper right", fontsize=8.5)
+    clean_ax(ax)
+    fig.tight_layout()
+    out = OUT / "kestrel_departure_from_mean.png"
+    fig.savefig(out, dpi=180, bbox_inches="tight")
+    plt.close(fig)
+    print("Wrote", out)
+
+
 def main() -> None:
     font_family = setup_fonts()
     apply_style(font_family)
@@ -1306,6 +1396,8 @@ def main() -> None:
     hobo_time_series(all_h)
     hobo_diurnal(all_h, hobo_start, hobo_end)
     hobo_exposure_hours(all_h, hobo_start, hobo_end)
+    hobo_departure_from_mean(all_h)
+    kestrel_departure_from_mean(k)
 
     meta = {
         "kestrel_rows": len(k),

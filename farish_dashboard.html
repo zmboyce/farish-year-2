@@ -239,6 +239,11 @@
     </div>
   </div>
   <p class="note" style="margin-top:12px">Score scales: Feeling 1 (Slightly Cool) → 6 (Very Hot) · Comfort 1 (Comfortable) → 4 (Very Uncomfortable). Diurnal curves average HOBO readings by clock time (15‑min cadence) over the deployment window; matches the static diurnal profile figure.</p>
+  <div class="chart-card" style="margin-top:20px">
+    <div class="section-title">Kestrel air temperature departure from same-visit network mean (°F)</div>
+    <p class="note" style="margin-bottom:8px">Each point shows how much warmer or cooler a site was compared to the average of all sites measured during the same visit window. Positive = hotter than mean.</p>
+    <div id="kestrel-depart-chart" style="height:340px"></div>
+  </div>
 </div>
 
 <!-- TAB: SCATTER -->
@@ -279,6 +284,10 @@
   <div class="chart-card">
     <div class="section-title">Daily mean relative humidity (%) — HOBO logger</div>
     <div id="hobo-rh-chart" style="height:300px"></div>
+  </div>
+  <div class="chart-card" style="margin-top:20px">
+    <div class="section-title">Daily temperature departure from network mean (°F) — HOBO logger</div>
+    <div id="hobo-depart-chart" style="height:300px"></div>
   </div>
 </div>
 
@@ -706,6 +715,60 @@ function drawTimeseries() {
 
   Plotly.newPlot('ts-feeling-chart', makeSiteTraces('feeling'), feelLayout, PLOTLY_CONFIG);
   Plotly.newPlot('ts-comfort-chart', makeSiteTraces('comfort'), comfLayout, PLOTLY_CONFIG);
+
+  drawKestrelDeparture();
+}
+
+function drawKestrelDeparture() {
+  // Group visits by (visit_date + period_key), compute departure from same-window mean
+  const byWindow = {};
+  DATA.visits.forEach(function(v) {
+    if (v.air_temp_f == null) return;
+    const key = v.visit_date + '_' + v.period_key;
+    if (!byWindow[key]) byWindow[key] = { date: v.visit_date, period: v.period_key, sites: {} };
+    byWindow[key].sites[v.site] = v.air_temp_f;
+  });
+
+  // Collect per-site departure values
+  const siteDep = {};  // site -> [{x: label, y: departure}]
+  SITES.forEach(function(s) { siteDep[s] = []; });
+
+  Object.keys(byWindow).sort().forEach(function(key) {
+    const w = byWindow[key];
+    const vals = Object.values(w.sites).filter(function(v){ return v!=null; });
+    if (vals.length < 2) return;  // need at least 2 sites to compute mean
+    const mean = vals.reduce(function(a,b){return a+b;},0) / vals.length;
+    const label = w.date + ' ' + w.period;
+    SITES.forEach(function(s) {
+      if (w.sites[s] != null) {
+        siteDep[s].push({ x: label, y: +(w.sites[s] - mean).toFixed(2) });
+      }
+    });
+  });
+
+  const kTraces = SITES.map(function(s) {
+    return {
+      name: 'Site '+s,
+      x: siteDep[s].map(function(d){return d.x;}),
+      y: siteDep[s].map(function(d){return d.y;}),
+      type: 'bar',
+      marker: { color: SC[s] },
+      hovertemplate: 'Site '+s+'<br>%{x}<br>Departure: %{y:+.2f}°F<extra></extra>',
+    };
+  });
+  Plotly.newPlot('kestrel-depart-chart', kTraces, mergeLayout({
+    barmode: 'group',
+    margin: { t: 10, r: 20, b: 100, l: 60 },
+    xaxis: { title: { text: 'Visit window' }, tickangle: -30, tickfont: { size: 10 } },
+    yaxis: {
+      title: { text: 'Departure from mean (°F)' },
+      zeroline: true, zerolinecolor: '#555', zerolinewidth: 1.5,
+    },
+    legend: { orientation: 'h', y: -0.3, yanchor: 'top', xanchor: 'center', x: 0.5 },
+    shapes: [{ type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 0, y1: 0,
+               line: { color: '#888', width: 1, dash: 'dot' } }],
+    hovermode: 'x unified',
+  }), PLOTLY_CONFIG);
 }
 
 // ── SCATTER ───────────────────────────────────────────────────────────────────
@@ -789,6 +852,48 @@ function drawHobo() {
     yaxis:{title:{text:'Relative Humidity (%)'}, rangemode:'normal'},
     legend:hoboLegend,
     hovermode:'x unified',
+  }), PLOTLY_CONFIG);
+
+  drawHoboDeparture();
+}
+
+function drawHoboDeparture() {
+  const hd = DATA.hobo_daily;
+  // Group by date, compute network mean
+  const byDate = {};
+  hd.forEach(function(r) {
+    if (!byDate[r.date]) byDate[r.date] = {};
+    byDate[r.date][r.site] = r.temp_f;
+  });
+  const dates = Object.keys(byDate).sort();
+  const departTraces = SITES.map(function(s) {
+    const xs = [], ys = [];
+    dates.forEach(function(d) {
+      const siteVals = Object.values(byDate[d]).filter(function(v){ return v != null; });
+      if (byDate[d][s] == null) return;
+      const mean = siteVals.reduce(function(a,b){return a+b;},0) / siteVals.length;
+      xs.push(d);
+      ys.push(+(byDate[d][s] - mean).toFixed(2));
+    });
+    return {
+      name: 'Site '+s, x: xs, y: ys, mode: 'lines+markers',
+      line: { color: SC[s], width: 2 },
+      marker: { color: SC[s], size: 5 },
+      hovertemplate: 'Site '+s+'<br>%{x}<br>Departure: %{y:+.2f}°F<extra></extra>',
+    };
+  });
+  Plotly.newPlot('hobo-depart-chart', departTraces, mergeLayout({
+    margin: { t: 10, r: 20, b: 90, l: 60 },
+    xaxis: { title: { text: 'Date' } },
+    yaxis: {
+      title: { text: 'Departure from mean (°F)' },
+      zeroline: true, zerolinecolor: '#555', zerolinewidth: 1.5,
+      rangemode: 'normal',
+    },
+    legend: hoboLegend,
+    shapes: [{ type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 0, y1: 0,
+               line: { color: '#888', width: 1, dash: 'dot' } }],
+    hovermode: 'x unified',
   }), PLOTLY_CONFIG);
 }
 
@@ -949,9 +1054,8 @@ let svViewMode = 'y2';
 
 function svSetView(mode) {
   svViewMode = mode;
-  ['y2','y1','compare'].forEach(function(m) {
-    const b = document.getElementById('sv-vbtn-'+m);
-    if (b) b.classList.toggle('active', m === mode);
+  document.querySelectorAll('.sv-mode-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.mode === mode);
   });
   // Re-render current survey tab
   const activeSvTab = SV_TABS.find(function(t) {
@@ -974,9 +1078,9 @@ function svRenderTab(tabId) {
     panel.dataset.built = '1';
     let h = '<div class="sv-view-bar">' +
       '<span style="font-size:12px;font-weight:600;color:var(--muted);margin-right:4px">View:</span>' +
-      '<button class="sv-vbtn active" id="sv-vbtn-y2" onclick="svSetView(&apos;y2&apos;)">Year 2</button>' +
-      '<button class="sv-vbtn" id="sv-vbtn-y1" onclick="svSetView(&apos;y1&apos;)">Year 1</button>' +
-      '<button class="sv-vbtn" id="sv-vbtn-compare" onclick="svSetView(&apos;compare&apos;)">Y1 vs Y2</button>' +
+      '<button class="sv-vbtn sv-mode-btn' + (svViewMode==='y2'?' active':'') + '" data-mode="y2" onclick="svSetView(&apos;y2&apos;)">Year 2</button>' +
+      '<button class="sv-vbtn sv-mode-btn' + (svViewMode==='y1'?' active':'') + '" data-mode="y1" onclick="svSetView(&apos;y1&apos;)">Year 1</button>' +
+      '<button class="sv-vbtn sv-mode-btn' + (svViewMode==='compare'?' active':'') + '" data-mode="compare" onclick="svSetView(&apos;compare&apos;)">Y1 vs Y2</button>' +
       '</div>' +
       '<div class="sv-legend-row">' +
       '<span><span class="swatch" style="background:'+SVC1+'"></span>June 22 (Y1)</span>' +
@@ -990,8 +1094,8 @@ function svRenderTab(tabId) {
       const cid = 'svchart-' + tabId.replace(/-/g,'_') + '-' + qi;
       // Decision Making: inject Q8 header before first matrix question
       if (tabId === 'sv-decision' && qi === 0) {
-        h += '<div class="sv-chart-card" style="grid-column:1/-1;padding:14px 16px 8px">' +
-             '<p style="margin:0;font-size:13px;font-weight:700;color:#1a1a2e;line-height:1.4">' +
+        h += '<div class="sv-chart-card" style="grid-column:1/-1;padding:16px 20px 10px">' +
+             '<p style="margin:0;font-size:16px;font-weight:700;color:#1a1a2e;line-height:1.5">' +
              '8. If cooling resources were available, how would that affect your decision to attend outdoor events on Farish Street next summer?' +
              '</p></div>';
       }
@@ -1005,10 +1109,9 @@ function svRenderTab(tabId) {
     panel.innerHTML = h;
   }
 
-  // Fix view button states after re-build
-  ['y2','y1','compare'].forEach(function(m) {
-    const b = document.getElementById('sv-vbtn-'+m);
-    if (b) b.classList.toggle('active', m === svViewMode);
+  // Fix view button states after re-build (all panels)
+  document.querySelectorAll('.sv-mode-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.mode === svViewMode);
   });
 
   sheet.questions.forEach(function(q, qi) {
@@ -1030,8 +1133,8 @@ function svRenderTab(tabId) {
         ticksuffix: '%', rangemode: 'tozero',
         gridcolor: '#e5e5e5', zeroline: false
       },
-      legend: { orientation: 'h', y: -0.28, font: { size: 11 }, xanchor: 'center', x: 0.5 },
-      margin: { t: 10, b: 85, l: 60, r: 20 },
+      legend: { orientation: 'h', y: 1.02, yanchor: 'bottom', xanchor: 'center', x: 0.5, font: { size: 11 } },
+      margin: { t: 50, b: 85, l: 60, r: 20 },
       paper_bgcolor: 'white', plot_bgcolor: 'white',
       height: 320,
       showlegend: traces.length > 1
