@@ -10,3 +10,6 @@ Survey/Outputs/*.png
 Survey/Outputs/*.docx
 analysis/outputs/
 *.log
+
+# Self-contained static report site (separate remote: capa-strategies/farish-report)
+Report/
