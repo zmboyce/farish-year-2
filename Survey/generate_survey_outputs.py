@@ -24,6 +24,7 @@ from pathlib import Path
 import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from matplotlib.font_manager import FontProperties
 import numpy as np
 import pandas as pd
 
@@ -462,6 +463,35 @@ def _coalesce_same_label_series(block: QuestionBlock) -> None:
     block.series = out
 
 
+def _dedupe_option_columns(block: QuestionBlock) -> None:
+    """If Excel has repeated option headers (same text twice), merge those columns
+    by summing counts in each series so the plot does not show empty duplicate categories."""
+    raw = [str(o).strip() for o in block.option_labels]
+    if len(raw) <= 1 or len(set(raw)) == len(raw):
+        return
+    # Preserve first-seen order of unique labels; map each to original column indices
+    order: list[str] = []
+    label_to_idx: dict[str, list[int]] = {}
+    for i, lab in enumerate(raw):
+        if lab not in label_to_idx:
+            label_to_idx[lab] = []
+            order.append(lab)
+        label_to_idx[lab].append(i)
+    n_new = len(order)
+    new_series: list[SeriesRow] = []
+    for s in block.series:
+        nc = [0.0] * n_new
+        for li, lab in enumerate(order):
+            for j in label_to_idx[lab]:
+                if j < len(s.counts) and s.counts[j] is not None:
+                    v = s.counts[j]
+                    if not (isinstance(v, float) and np.isnan(v)):
+                        nc[li] += float(v)
+        new_series.append(SeriesRow(label=s.label, counts=nc, percents=None))
+    block.option_labels = order
+    block.series = new_series
+
+
 def clean_block(block: QuestionBlock) -> QuestionBlock | None:
     if "10. If YES" in block.question and "temperature" in block.question.lower():
         return None
@@ -476,6 +506,7 @@ def clean_block(block: QuestionBlock) -> QuestionBlock | None:
             series2.append(s)
     block.series = series2
     _coalesce_same_label_series(block)
+    _dedupe_option_columns(block)
     return block if block.series else None
 
 
@@ -502,6 +533,29 @@ def _pct_list(s: SeriesRow, n_opts: int) -> list[float]:
 
 
 # ── Plot helpers ──────────────────────────────────────────────────────────────
+def _axis_title_font(size: float) -> FontProperties:
+    """Avenir Next Medium Condensed for axis titles (distinct from tick labels)."""
+    p = FONTS / "AvenirNextLTPro-MediumCn.otf"
+    if p.is_file():
+        fp = FontProperties(fname=str(p))
+        fp.set_size(size)
+        return fp
+    fp = FontProperties()
+    fp.set_family(setup_fonts())
+    fp.set_size(size)
+    return fp
+
+
+def _style_axis_titles_medium_cn(ax, label_size: float = 9.0) -> None:
+    for lab_obj in (ax.xaxis.label, ax.yaxis.label):
+        if lab_obj.get_text():
+            lab_obj.set_fontproperties(_axis_title_font(label_size))
+
+
+def _wrap_opts(opts: list[str], max_chars: int) -> list[str]:
+    return [textwrap.fill(o.replace("/", "/ "), max_chars) for o in opts]
+
+
 def _series_colors(labels: list[str]) -> list[str]:
     """Match series labels to the Year 1 Excel bar palette."""
     result: list[str] = []
@@ -542,8 +596,10 @@ def plot_block(
     # Wider bars: old formula capped at 0.25 so single-series charts looked anemic; use
     # most of the unit width per category without overlap between groups.
     width = min(0.9 / max(n_s, 1), 0.62)
-    fig_w = max(6.2, 0.52 * n_o * (1.0 + 0.22 * max(0, n_s - 1)) + 1.8)
-    fig, ax = plt.subplots(figsize=(fig_w, 4.8))
+    # Wider figure when many long category labels; extra margin for wrapped text
+    fig_w = max(7.0, 0.68 * n_o * (1.0 + 0.18 * max(0, n_s - 1)) + 2.4)
+    fig_h = 5.0 if n_o >= 4 else 4.8
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
 
     x = np.arange(n_o)
     for si, (lab, pc) in enumerate(zip(labels, pcts)):
@@ -556,16 +612,21 @@ def plot_block(
             linewidth=0.4,
         )
 
-    ax.set_ylabel("Percent of respondents", fontsize=9)
+    ax.set_ylabel("Percent of respondents", fontsize=9, color="#555555", labelpad=4)
     ymax = max(max(p[:n_o]) for p in pcts) if pcts else 100
     ax.set_ylim(0, min(100, ymax * 1.18 + 3))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}%"))
     ax.set_xticks(x)
-    wrapped = [textwrap.fill(o.replace("/", "/ "), 14) for o in opts]
-    ax.set_xticklabels(wrapped, fontsize=8.5)
+    # Slightly wider wrap + rotation reduces overlap on dense charts
+    wrap_w = 20 if n_o >= 4 else 16
+    wrapped = _wrap_opts(opts, wrap_w)
+    ax.set_xticklabels(wrapped, fontsize=8, color="#333333", linespacing=0.95)
+    plt.setp(ax.get_xticklabels(), rotation=0, ha="center")
     ax.tick_params(bottom=False)
     ax.spines["bottom"].set_visible(False)
-    ax.set_xlabel("Response", fontsize=9, color="#555555", labelpad=6)
+    ax.set_xlabel("Response", fontsize=9, color="#555555", labelpad=7)
+
+    _style_axis_titles_medium_cn(ax, 9.0)
 
     title = block.plot_title()
     ax.set_title(title, fontsize=13, fontweight="bold", pad=10, loc="center")
@@ -574,7 +635,8 @@ def plot_block(
         handles = [mpatches.Patch(color=colors[si], label=labels[si]) for si in range(n_s)]
         ax.legend(handles=handles, loc="upper right", fontsize=8, framealpha=0.9, edgecolor="#dddddd")
 
-    fig.tight_layout(pad=1.2)
+    fig.tight_layout(pad=1.0)
+    fig.subplots_adjust(bottom=0.28)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
@@ -598,17 +660,20 @@ def plot_y1_y2_comparison(b1: QuestionBlock, b2: QuestionBlock, out_path: Path) 
 
     w = 0.42
     x = np.arange(n)
-    fig, ax = plt.subplots(figsize=(max(6.2, 0.52 * n + 1.6), 4.8))
+    fig_w = max(7.0, 0.68 * n + 2.0)
+    fig, ax = plt.subplots(figsize=(fig_w, 5.0 if n >= 4 else 4.8))
     ax.bar(x - w / 2, p1, w, label="Year 1 (all festival dates)", color=COL_ALL, edgecolor="white")
     ax.bar(x + w / 2, p2, w, label="Year 2 (all respondents)", color=COL_Y2_COMP, edgecolor="white")
-    ax.set_ylabel("Percent of respondents", fontsize=9)
+    ax.set_ylabel("Percent of respondents", fontsize=9, color="#555555", labelpad=4)
     ax.set_ylim(0, 100)
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}%"))
     ax.set_xticks(x)
-    ax.set_xticklabels([textwrap.fill(o.replace("/", "/ "), 16) for o in opts], fontsize=8.5)
+    wrap_w = 20 if n >= 4 else 16
+    ax.set_xticklabels(_wrap_opts(opts, wrap_w), fontsize=8, color="#333333", linespacing=0.95)
     ax.tick_params(bottom=False)
     ax.spines["bottom"].set_visible(False)
-    ax.set_xlabel("Response", fontsize=9, color="#555555", labelpad=6)
+    ax.set_xlabel("Response", fontsize=9, color="#555555", labelpad=7)
+    _style_axis_titles_medium_cn(ax, 9.0)
     title = b1.plot_title()
     if b1.subquestion and not is_matrix_question(b1.question):
         title += f" — {b1.subquestion}"
@@ -616,7 +681,8 @@ def plot_y1_y2_comparison(b1: QuestionBlock, b2: QuestionBlock, out_path: Path) 
     ax.legend(fontsize=8.5, framealpha=0.9, edgecolor="#dddddd")
     ax.grid(axis="y", linestyle=":", alpha=0.5)
     ax.spines["left"].set_visible(False)
-    fig.tight_layout(pad=1.2)
+    fig.tight_layout(pad=1.0)
+    fig.subplots_adjust(bottom=0.28)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
