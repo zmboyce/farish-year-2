@@ -2,4 +2,5 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "python -m http.server $PORT --directory ."
+# Static site + optional HTTP Basic Auth (BASIC_AUTH_USER, BASIC_AUTH_PASSWORD in Railway)
+startCommand = "python serve_dashboard.py"
