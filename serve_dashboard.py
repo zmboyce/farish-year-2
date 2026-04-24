@@ -11,6 +11,7 @@ import base64
 import binascii
 import os
 import sys
+from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 
@@ -63,6 +64,9 @@ def make_handler() -> type[SimpleHTTPRequestHandler]:
                 self._unauthorized()
                 return
             super().do_HEAD()
+
+        def list_directory(self, path: str) -> None:  # noqa: N802
+            self.send_error(HTTPStatus.FORBIDDEN, "Directory listing is disabled")
 
         def log_message(self, fmt, *a) -> None:  # noqa: ANN001
             sys.stderr.write(f"[{self.address_string()}] {fmt % a}\n")

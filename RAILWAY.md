@@ -9,7 +9,7 @@
 
 3. `PORT` is set automatically by Railway. Optional: `HTTP_SERVER_ROOT` (defaults to `.`).
 
-4. After deploy, open `/farish_dashboard.html` (or set a redirect from `/` in your app if you add one later).
+4. After deploy, open `/` — `index.html` redirects to `farish_dashboard.html`. Directory listing is disabled for other paths.
 
 ## Git remotes (example)
 
