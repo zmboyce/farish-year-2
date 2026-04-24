@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Farish Street Year 2</title>
+<title>Farish Street — Year 2 Dashboard</title>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
 <style>
   :root {
@@ -156,6 +156,9 @@
   table.sv-raw-tbl th, table.sv-raw-tbl td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; }
   table.sv-raw-tbl th { background: #f1f3f6; font-weight: 700; color: var(--muted); }
   table.sv-raw-tbl tr:hover td { background: #f8f9fb; }
+
+  .sv-charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .sv-charts-grid { grid-template-columns: 1fr; } }
   .pos { color: #276749; } .neg { color: #c53030; }
 
 </style>
@@ -165,7 +168,7 @@
 <header>
   <div>
     <h1>Farish Street Year 2</h1>
-    <span class="header-note" id="header-cal"></span>
+
   </div>
 </header>
 
@@ -982,13 +985,23 @@ function svRenderTab(tabId) {
       '<span><span class="swatch" style="background:'+SVCY2+'"></span>Year 2 (n≈162)</span>' +
       '<span><span class="swatch" style="background:'+SVCY2C+'"></span>Y2 in comparisons</span>' +
       '</div>';
+    h += '<div class="sv-charts-grid">';
     sheet.questions.forEach(function(q, qi) {
       const cid = 'svchart-' + tabId.replace(/-/g,'_') + '-' + qi;
-      h += '<div class="sv-chart-card">' +
+      // Decision Making: inject Q8 header before first matrix question
+      if (tabId === 'sv-decision' && qi === 0) {
+        h += '<div class="sv-chart-card" style="grid-column:1/-1;padding:14px 16px 8px">' +
+             '<p style="margin:0;font-size:13px;font-weight:700;color:#1a1a2e;line-height:1.4">' +
+             '8. If cooling resources were available, how would that affect your decision to attend outdoor events on Farish Street next summer?' +
+             '</p></div>';
+      }
+      const fullWidth = (tabId === 'sv-decision' && qi === 6);
+      h += '<div class="sv-chart-card"' + (fullWidth ? ' style="grid-column:1/-1"' : '') + '>' +
            '<p class="sv-chart-title">' + svEsc(q.title) + '</p>' +
            '<div id="' + cid + '" style="height:320px"></div>' +
            '</div>';
     });
+    h += '</div>'; // end sv-charts-grid
     panel.innerHTML = h;
   }
 
@@ -1099,10 +1112,7 @@ function svEsc(s) {
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  const hn = document.getElementById('header-cal');
-  if (hn && DATA.summary && DATA.summary.hobo_calibration_note) {
-    hn.textContent = DATA.summary.hobo_calibration_note;
-  }
+
   initialised['overview'] = true;
   drawOverview();
 });
