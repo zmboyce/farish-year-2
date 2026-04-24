@@ -20,6 +20,15 @@ from kestrel_calibration import apply_kestrel_calibrations, kestrel_calibration_
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "Data"
 OUT_HTML = ROOT / "farish_dashboard.html"
+REPORT_INDEX = ROOT / "Report" / "index.html"
+
+# Kestrel site-average table in Report/index.html (static HTML mirror of DATA.site_avgs)
+REPORT_KESTREL_TABLE_LABELS = {
+    1: "Site 1 &mdash; Courtyard Center",
+    2: "Site 2 &mdash; Adjacent Lot",
+    3: "Site 3 &mdash; Ditch Vegetation",
+    4: "Site 4 &mdash; Control (East Griffith)",
+}
 
 FEELING_SCORE = {
     "Slightly_Cool": 1, "Cool": 1, "Neutral": 2, "Slightly_Warm": 3,
@@ -1169,6 +1178,115 @@ def build_html(data: dict) -> str:
     return HTML_TEMPLATE.replace("__DATA_JSON__", data_json)
 
 
+def _report_kestrel_table_tbody_html(site_avgs: list) -> str:
+    """Build <tbody> inner rows for the Kestrel site-average table in Report/index.html."""
+    by_site = {int(r["site"]): r for r in site_avgs}
+    rows: list[str] = []
+    for s in (1, 2, 3, 4):
+        r = by_site[s]
+        rows.append(
+            f'      <tr><td>{REPORT_KESTREL_TABLE_LABELS[s]}</td>'
+            f'<td class="num">{r["air_temp_f"]:.1f}</td>'
+            f'<td class="num">{r["wbgt_f"]:.1f}</td>'
+            f'<td class="num">{r["rh_pct"]:.1f}</td>'
+            f'<td class="num">{r["wind_mph"]:.1f}</td></tr>'
+        )
+    n_site = 4
+    net_air = sum(by_site[s]["air_temp_f"] for s in (1, 2, 3, 4)) / n_site
+    net_wbgt = sum(by_site[s]["wbgt_f"] for s in (1, 2, 3, 4)) / n_site
+    net_rh = sum(by_site[s]["rh_pct"] for s in (1, 2, 3, 4)) / n_site
+    net_wind = sum(by_site[s]["wind_mph"] for s in (1, 2, 3, 4)) / n_site
+    rows.append(
+        "      <tr class=\"avg-row\"><td>Network average</td>"
+        f'<td class="num">{net_air:.1f}</td><td class="num">{net_wbgt:.1f}</td>'
+        f'<td class="num">{net_rh:.1f}</td><td class="num">{net_wind:.1f}</td></tr>'
+    )
+    return "\n".join(rows)
+
+
+def _read_report_index_html() -> str:
+    """Read Report/index.html; some builds use 0x9D before F instead of a degree sign."""
+    raw = REPORT_INDEX.read_bytes()
+    fixed = raw.replace(b"\x9dF", "\u00b0F".encode("utf-8"))
+    return fixed.decode("utf-8")
+
+
+def _patch_report_index_rdata(data: dict) -> tuple[str | None, bool]:
+    """
+    Replace embedded RDATA in Report/index.html (capa-strategies/farish-report).
+    Returns (error_message_or_None, success).
+    """
+    p = REPORT_INDEX
+    if not p.is_file():
+        return ("Report index not found (optional)", False)
+    text = _read_report_index_html()
+    key = "const RDATA = "
+    i = text.find(key)
+    if i < 0:
+        return ("const RDATA not found in Report index", False)
+    j = i + len(key)
+    while j < len(text) and text[j] in " \n\t":
+        j += 1
+    if j >= len(text) or text[j] != "{":
+        return ("RDATA value does not start with {", False)
+    end_sig = "};\nconst SV"
+    k = text.find(end_sig, j)
+    if k < 0:
+        return ("Could not find end of RDATA (}; before const SV)", False)
+    sc = data.get("site_colors") or {}
+    if isinstance(sc, dict) and sc and not isinstance(next(iter(sc.keys())), str):
+        sc = {str(k): v for k, v in sc.items()}
+    rdata = {
+        "hobo_daily": data["hobo_daily"],
+        "hobo_diurnal": data["hobo_diurnal"],
+        "exposure": data["exposure"],
+        "visits": data["visits"],
+        "perception_by_site": data["perception_by_site"],
+        "site_colors": sc,
+        "site_avgs": data["site_avgs"],
+    }
+    new_blob = json.dumps(rdata, default=str)
+    return (text[:j] + new_blob + text[k + 1 :], True)
+
+
+def _patch_report_kestrel_table(text: str, site_avgs: list) -> tuple[str | None, bool]:
+    new_inner = _report_kestrel_table_tbody_html(site_avgs)
+    new_tbody = f"    <tbody>\n{new_inner}\n    </tbody>"
+    new_text, n = re.subn(
+        r"    <tbody>\s*<tr><td>Site 1 &mdash; Courtyard Center</td>.*?</tbody>",
+        new_tbody,
+        text,
+        count=1,
+        flags=re.DOTALL,
+    )
+    if n != 1:
+        return (None, False)
+    return (new_text, True)
+
+
+def patch_interactive_report(data: dict) -> bool:
+    """
+    Update Report/index.html to match dashboard HOBO + calibrated Kestrel data.
+    Safe no-op if Report/ is missing.
+    """
+    res = _patch_report_index_rdata(data)
+    if not res[1]:
+        if res[0] and "not found" in res[0]:
+            return False
+        print("Warning: Report/index.html RDATA not updated:", res[0])
+        return False
+    text: str = res[0]  # type: ignore[assignment]
+    t2, ok = _patch_report_kestrel_table(text, data["site_avgs"])
+    if not ok or t2 is None:
+        print("Warning: Kestrel summary table in Report/index.html not auto-updated.")
+    else:
+        text = t2
+    REPORT_INDEX.write_text(text, encoding="utf-8")
+    rel = REPORT_INDEX.relative_to(ROOT)
+    print(f"Updated interactive report {rel}  ({REPORT_INDEX.stat().st_size // 1024} KB)")
+    return True
+
+
 def _patch_combined_dashboard_embedded_data(data: dict) -> bool:
     """If farish_dashboard.html is the combined survey+climate file, replace only the DATA JSON."""
     p = OUT_HTML
@@ -1216,6 +1334,8 @@ def main():
     else:
         OUT_HTML.write_text(html, encoding="utf-8")
         print(f"Wrote {OUT_HTML}  ({len(html)//1024} KB)")
+
+    patch_interactive_report(data)
 
 
 if __name__ == "__main__":
