@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 
 from hobo_calibration import apply_hobo_air_temp_calibration
+from kestrel_calibration import apply_kestrel_calibrations, kestrel_calibration_summary_lines
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parent.parent
@@ -68,9 +69,9 @@ def load_kestrel() -> pd.DataFrame:
     df["feeling_label"] = feel.str.replace("_", " ", regex=False)
     df["comfort_label"] = comf.str.replace("_", " ", regex=False)
     df["week_start"] = (
-        df["visit_date"] - pd.to_timedelta(df["visit_date"].dt.dayofweek, unit="d")
+        df["visit_date"] - pd.to_timedelta(df["visit_date"].dt.dayofweek, unit="D")
     )
-    return df
+    return apply_kestrel_calibrations(df)
 
 
 # HOBO diurnal window — matches run_farish_analysis.hobo_diurnal(...)
@@ -182,6 +183,7 @@ def prepare(kdf: pd.DataFrame, hdf: pd.DataFrame) -> dict:
             "HOBO air temperature (°F) adjusted: Site 1 −0.36, Site 2 −1.04, "
             "Site 3 +0.46, Site 4 +0.93 (offsets added to converted air temp)."
         ),
+        "kestrel_calibration_note": " ".join(kestrel_calibration_summary_lines()),
     }
 
     # --- mean perception ± SEM by site (matches bar-chart deliverable) ---
@@ -1167,6 +1169,31 @@ def build_html(data: dict) -> str:
     return HTML_TEMPLATE.replace("__DATA_JSON__", data_json)
 
 
+def _patch_combined_dashboard_embedded_data(data: dict) -> bool:
+    """If farish_dashboard.html is the combined survey+climate file, replace only the DATA JSON."""
+    p = OUT_HTML
+    if not p.is_file():
+        return False
+    text = p.read_text(encoding="utf-8")
+    if "tab-sv-sociodem" not in text:
+        return False
+    key = "const DATA = "
+    i = text.find(key)
+    if i < 0:
+        return False
+    j = i + len(key)
+    while j < len(text) and text[j] in " \n\t":
+        j += 1
+    try:
+        _obj, end = json.JSONDecoder().raw_decode(text, j)
+    except json.JSONDecodeError as e:
+        print("Warning: could not parse embedded DATA in combined dashboard:", e)
+        return False
+    new_blob = json.dumps(data, default=str)
+    p.write_text(text[:j] + new_blob + text[end:], encoding="utf-8")
+    return True
+
+
 def main():
     print("Loading Kestrel data…")
     kdf = load_kestrel()
@@ -1182,8 +1209,13 @@ def main():
     print("Building HTML…")
     html = build_html(data)
 
-    OUT_HTML.write_text(html, encoding="utf-8")
-    print(f"Wrote {OUT_HTML}  ({len(html)//1024} KB)")
+    if _patch_combined_dashboard_embedded_data(data):
+        print(
+            f"Updated embedded const DATA in combined {OUT_HTML.name}  ({OUT_HTML.stat().st_size//1024} KB)"
+        )
+    else:
+        OUT_HTML.write_text(html, encoding="utf-8")
+        print(f"Wrote {OUT_HTML}  ({len(html)//1024} KB)")
 
 
 if __name__ == "__main__":

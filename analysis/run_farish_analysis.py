@@ -19,6 +19,12 @@ import numpy as np
 import pandas as pd
 
 from hobo_calibration import HOBO_AIR_TEMP_OFFSET_F, apply_hobo_air_temp_calibration, offsets_table
+from kestrel_calibration import (
+    KESTREL_AIR_TEMP_OFFSET_F,
+    KESTREL_WBGT_OFFSET_F,
+    apply_kestrel_calibrations,
+    kestrel_offsets_table,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "Data"
@@ -119,9 +125,9 @@ def load_kestrel() -> pd.DataFrame:
     df["feeling_label"] = feel.str.replace("_", " ", regex=False)
     df["comfort_label"] = comf.str.replace("_", " ", regex=False)
     df["week_start"] = (
-        df["visit_date"] - pd.to_timedelta(df["visit_date"].dt.dayofweek, unit="d")
+        df["visit_date"] - pd.to_timedelta(df["visit_date"].dt.dayofweek, unit="D")
     ).dt.normalize()
-    return df
+    return apply_kestrel_calibrations(df)
 
 
 def c_to_f(c: pd.Series) -> pd.Series:
@@ -1402,6 +1408,8 @@ def main() -> None:
     all_h = apply_hobo_air_temp_calibration(h_uncal)
     offsets_table().to_csv(OUT / "hobo_calibration_offsets.csv", index=False)
     print("Wrote", OUT / "hobo_calibration_offsets.csv")
+    kestrel_offsets_table().to_csv(OUT / "kestrel_calibration_offsets.csv", index=False)
+    print("Wrote", OUT / "kestrel_calibration_offsets.csv")
     hobo_calibration_reference_plot()
     hobo_calibration_before_after_plots(h_uncal, all_h, hobo_start, hobo_end)
     kestrel_hobo_daily_context(k, all_h)
@@ -1419,6 +1427,8 @@ def main() -> None:
         "hobo_window": f"{hobo_start} .. exclusive {hobo_end}",
         "font_family": font_family,
         "hobo_air_temp_calibration_f": str(HOBO_AIR_TEMP_OFFSET_F),
+        "kestrel_air_temp_offset_f": str(KESTREL_AIR_TEMP_OFFSET_F),
+        "kestrel_wbgt_offset_f": str(KESTREL_WBGT_OFFSET_F),
         "note": "HOBO timestamps 2025; outline text references 2026 — uses logger calendar.",
     }
     pd.Series(meta).to_csv(OUT / "run_metadata.csv")
