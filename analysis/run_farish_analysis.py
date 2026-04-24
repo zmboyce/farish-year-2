@@ -10,6 +10,7 @@ import re
 from pathlib import Path
 
 import matplotlib.font_manager as fm
+from matplotlib.font_manager import FontProperties
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.patches as mpatches
@@ -144,12 +145,25 @@ def load_all_hobo() -> pd.DataFrame:
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+def _medium_cn_fp(size: float | None = None) -> FontProperties:
+    """FontProperties for AvenirNextLTPro-MediumCn (axis title labels)."""
+    fp = FontProperties(fname=str(FONTS / "AvenirNextLTPro-MediumCn.otf"))
+    if size is not None:
+        fp.set_size(size)
+    return fp
+
+
 def clean_ax(ax: plt.Axes) -> None:
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_color("#cccccc")
     ax.spines["bottom"].set_color("#cccccc")
     ax.tick_params(length=3, color="#aaaaaa")
+    # Apply MediumCn to axis title labels so they visually differ from tick labels
+    for label_obj in (ax.xaxis.label, ax.yaxis.label):
+        if label_obj.get_text():
+            fp = _medium_cn_fp(size=label_obj.get_fontsize())
+            label_obj.set_fontproperties(fp)
 
 
 # ── Kestrel: table + boxplots ─────────────────────────────────────────────────
