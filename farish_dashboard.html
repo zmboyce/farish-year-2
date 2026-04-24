@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farish Street Year 2</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<style>
+  :root {
+    --c1: #1F6B8E; --c2: #C96A1E; --c3: #3E7E50; --c4: #7B4F9E;
+    --bg: #f8f9fb; --card: #ffffff; --border: #e2e6ea;
+    --text: #1a1a2e; --muted: #6c757d; --accent: #1F6B8E;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         background: var(--bg); color: var(--text); font-size: 14px; }
+
+  /* Header */
+  header { background: #12253a; color: #fff; padding: 22px 32px; display: flex;
+           align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.3px; }
+  header span { color: #94a8bc; font-size: 0.85rem; }
+  header .header-note { display: block; width: 100%; margin-top: 8px; font-size: 0.8rem;
+                         color: #94a8bc; font-weight: 400; line-height: 1.4; max-width: 52rem; }
+
+  /* Tabs */
+  .tab-bar { background: #fff; border-bottom: 2px solid var(--border);
+             display: flex; padding: 0 28px; gap: 0; position: sticky; top: 0; z-index: 100; }
+  .tab-btn { padding: 14px 20px; font-size: 13px; font-weight: 500; color: var(--muted);
+             cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent;
+             margin-bottom: -2px; transition: color 0.15s, border-color 0.15s; white-space: nowrap; }
+  .tab-btn:hover { color: var(--accent); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-panel { display: none; padding: 28px 32px; }
+  .tab-panel.active { display: block; }
+
+  /* Cards */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+           gap: 14px; margin-bottom: 24px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+          padding: 18px 20px; }
+  .card-site { border-top: 4px solid; }
+  .card h3 { font-size: 0.78rem; font-weight: 600; text-transform: uppercase;
+             letter-spacing: 0.6px; color: var(--muted); margin-bottom: 10px; }
+  .card .big { font-size: 1.9rem; font-weight: 700; line-height: 1; }
+  .card .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px;
+                   margin-top: 10px; }
+  .card .m-label { font-size: 0.75rem; color: var(--muted); }
+  .card .m-val { font-size: 0.92rem; font-weight: 600; }
+
+  /* Section headers */
+  .section-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+                   letter-spacing: 0.7px; color: var(--muted); margin-bottom: 12px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .row2-wide { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px; }
+  @media (max-width: 800px) { .row2, .row2-wide { grid-template-columns: 1fr; } }
+  .chart-card { background: var(--card); border: 1px solid var(--border);
+                border-radius: 10px; padding: 18px 16px; }
+
+  /* Controls */
+  .controls { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+              align-items: center; }
+  .ctrl-label { font-size: 12px; font-weight: 600; color: var(--muted);
+                text-transform: uppercase; letter-spacing: 0.5px; }
+  .site-toggle { display: flex; gap: 6px; }
+  .site-chip { padding: 5px 12px; border-radius: 20px; border: 1.5px solid;
+               font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .site-chip.active { color: #fff !important; }
+  select.ctrl-select { padding: 6px 10px; border-radius: 6px; border: 1.5px solid var(--border);
+                       font-size: 13px; color: var(--text); background: #fff; cursor: pointer; }
+
+  /* Toggle switch */
+  .toggle-group { display: flex; background: #f1f3f5; border-radius: 8px; padding: 3px; gap: 2px; }
+  .toggle-opt { padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+                cursor: pointer; color: var(--muted); transition: all 0.15s; }
+  .toggle-opt.active { background: #fff; color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+  /* Raw table */
+  .table-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+  .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; background: #fff; }
+  thead { position: sticky; top: 0; z-index: 10; }
+  th { background: #f1f3f6; padding: 10px 14px; text-align: left; font-size: 12px;
+       font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;
+       cursor: pointer; user-select: none; white-space: nowrap; border-bottom: 2px solid var(--border); }
+  th:hover { background: #e8eaed; }
+  th .sort-icon { margin-left: 4px; color: #bbb; }
+  th.sort-asc .sort-icon::after { content: " ▲"; color: var(--accent); }
+  th.sort-desc .sort-icon::after { content: " ▼"; color: var(--accent); }
+  td { padding: 9px 14px; font-size: 13px; border-bottom: 1px solid #f0f2f4; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8f9fb; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px;
+          font-weight: 600; }
+  .badge-1 { background: #dff0fa; color: var(--c1); }
+  .badge-2 { background: #fdebd0; color: var(--c2); }
+  .badge-3 { background: #d5eddb; color: var(--c3); }
+  .badge-4 { background: #ecdff5; color: var(--c4); }
+  .feel-hot { background: #ffe0b2; color: #b44a00; }
+  .feel-very-hot { background: #ffcdd2; color: #b71c1c; }
+  .feel-neutral { background: #e8f5e9; color: #2e7d32; }
+  .feel-warm { background: #fff8e1; color: #f57f17; }
+  .feel-cool { background: #e3f2fd; color: #1565c0; }
+  .comf-ok { background: #e8f5e9; color: #2e7d32; }
+  .comf-slight { background: #fff8e1; color: #f57f17; }
+  .comf-uncomf { background: #ffe0b2; color: #b44a00; }
+  .comf-very { background: #ffcdd2; color: #b71c1c; }
+
+  .export-btn { padding: 7px 14px; background: var(--accent); color: #fff; border: none;
+                border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;
+                margin-left: auto; }
+  .export-btn:hover { opacity: 0.88; }
+  input.filter-input { padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 6px;
+                       font-size: 13px; color: var(--text); }
+  .stat-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+              padding: 12px 16px; text-align: center; min-width: 100px; }
+  .stat-box .n { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+  .stat-box .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .note { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .ts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 18px;
+    margin-bottom: 4px;
+    align-items: stretch;
+  }
+  .ts-grid .chart-card { margin-bottom: 0; }
+  .ts-chart-h { height: 268px; min-height: 220px; }
+  @media (max-width: 920px) {
+    .ts-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── Survey tabs ──────────────────────────────── */
+  .tab-sep { color: #ccc; padding: 0 6px; align-self: center; font-size: 18px; }
+  .sv-panel { padding: 20px 32px 60px; }
+  .sv-view-bar { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+  .sv-vbtn { background: #f1f3f6; border: 1px solid #dde3ea; border-radius: 20px;
+             cursor: pointer; font-size: 11px; font-weight: 600; color: #5c6b7a;
+             padding: 5px 13px; transition: all .15s; }
+  .sv-vbtn:hover { background: #e2e8ef; }
+  .sv-vbtn.active { background: #12253a; color: #fff; border-color: #12253a; }
+  .sv-chart-card { background: #fff; border: 1px solid var(--border);
+                   border-radius: 10px; padding: 14px 14px 6px; margin-bottom: 18px; }
+  .sv-chart-title { font-size: 13px; font-weight: 700; color: var(--text);
+                    margin: 0 0 10px; line-height: 1.35; }
+  .sv-legend-row { display: flex; gap: 14px; flex-wrap: wrap; padding: 4px 0 12px;
+                   align-items: center; }
+  .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px;
+            margin-right: 5px; vertical-align: middle; flex-shrink: 0; }
+  .sv-legend-row span { font-size: 11.5px; color: #555; display: flex; align-items: center; }
+  .sv-search-box { width: 100%; max-width: 360px; padding: 8px 12px;
+                   border: 1px solid var(--border); border-radius: 8px;
+                   font-size: 13px; margin-bottom: 14px; display: block; }
+  table.sv-raw-tbl { width: 100%; border-collapse: collapse; font-size: 12px; background:#fff; }
+  table.sv-raw-tbl th, table.sv-raw-tbl td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; }
+  table.sv-raw-tbl th { background: #f1f3f6; font-weight: 700; color: var(--muted); }
+  table.sv-raw-tbl tr:hover td { background: #f8f9fb; }
+  .pos { color: #276749; } .neg { color: #c53030; }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Farish Street Year 2</h1>
+    <span class="header-note" id="header-cal"></span>
+  </div>
+</header>
+
+<nav class="tab-bar">
+  <button class="tab-btn active" data-tab="overview" onclick="showTab('overview')">Overview</button>
+  <button class="tab-btn" data-tab="timeseries" onclick="showTab('timeseries')">Timeseries</button>
+  <button class="tab-btn" data-tab="scatter" onclick="showTab('scatter')">Scatter</button>
+  <button class="tab-btn" data-tab="hobo" onclick="showTab('hobo')">HOBO Temps</button>
+  <button class="tab-btn" data-tab="rawdata" onclick="showTab('rawdata')">Raw Data</button>
+  <span class="tab-sep">|</span>
+  <button class="tab-btn" data-tab="sv-sociodem"       onclick="showTab('sv-sociodem')">Socio-Demographics</button>
+  <button class="tab-btn" data-tab="sv-comfortability" onclick="showTab('sv-comfortability')">Comfort &amp; Heat</button>
+  <button class="tab-btn" data-tab="sv-decision"       onclick="showTab('sv-decision')">Decision Making</button>
+  <button class="tab-btn" data-tab="sv-green"          onclick="showTab('sv-green')">Green Spaces</button>
+  <button class="tab-btn" data-tab="sv-rawdata"        onclick="showTab('sv-rawdata')">Survey Data</button>
+</nav>
+
+<!-- TAB: OVERVIEW -->
+<div id="tab-overview" class="tab-panel active">
+  <div class="stat-row" id="overview-summary" style="margin-bottom:18px"></div>
+  <div id="site-cards" class="cards"></div>
+  <div class="row2">
+    <div class="chart-card">
+      <div class="section-title">Hours above temperature thresholds (HOBO)</div>
+      <div id="exposure-chart" style="height:340px"></div>
+    </div>
+    <div class="chart-card">
+      <div class="section-title">Mean perception scores by site (± SEM)</div>
+      <div id="ov-perc-feel-bar" style="height:200px"></div>
+      <div id="ov-perc-comf-bar" style="height:200px"></div>
+    </div>
+  </div>
+  <div class="controls" style="margin-top:8px">
+    <span class="ctrl-label">Daily chart — sites</span>
+    <div class="site-toggle" id="ov-daily-site-toggle"></div>
+  </div>
+  <p class="note" style="margin-bottom:12px">Daily means pool only visits from the selected sites (same calendar day). Turn sites on/off to compare.</p>
+  <div class="chart-card">
+    <div class="section-title">Daily mean perception scores</div>
+    <div id="daily-chart" style="height:320px"></div>
+  </div>
+</div>
+
+<!-- TAB: TIMESERIES -->
+<div id="tab-timeseries" class="tab-panel">
+  <div class="controls">
+    <span class="ctrl-label">Sites</span>
+    <div class="site-toggle" id="ts-site-toggle"></div>
+  </div>
+  <p class="note" style="margin-bottom:14px">Site toggles apply to all four panels below (two per row). Top: HOBO diurnal curve and estimated vs. Kestrel air. Bottom: perception scores by visit date.</p>
+  <div class="ts-grid">
+    <div class="chart-card">
+      <div class="section-title">HOBO: mean diurnal air temperature</div>
+      <p class="note" id="ts-diurnal-window" style="margin-bottom:8px"></p>
+      <div id="ts-diurnal-chart" class="ts-chart-h"></div>
+    </div>
+    <div class="chart-card">
+      <div class="section-title">Estimated vs. measured air temperature (Kestrel)</div>
+      <div id="ts-est-chart" class="ts-chart-h"></div>
+    </div>
+    <div class="chart-card">
+      <div class="section-title">Air temperature feeling score by site</div>
+      <div id="ts-feeling-chart" class="ts-chart-h"></div>
+    </div>
+    <div class="chart-card">
+      <div class="section-title">Thermal comfort score by site</div>
+      <div id="ts-comfort-chart" class="ts-chart-h"></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:12px">Score scales: Feeling 1 (Slightly Cool) → 6 (Very Hot) · Comfort 1 (Comfortable) → 4 (Very Uncomfortable). Diurnal curves average HOBO readings by clock time (15‑min cadence) over the deployment window; matches the static diurnal profile figure.</p>
+</div>
+
+<!-- TAB: SCATTER -->
+<div id="tab-scatter" class="tab-panel">
+  <div class="controls">
+    <span class="ctrl-label">X axis</span>
+    <select class="ctrl-select" id="scatter-x" onchange="drawScatter()">
+      <option value="air_temp_f">Kestrel air temperature (°F)</option>
+      <option value="wbgt_f">WBGT (°F)</option>
+      <option value="rh_pct">Relative Humidity (%)</option>
+      <option value="wind_mph">Wind Speed (mph)</option>
+      <option value="est_temp_f">Estimated temperature (°F)</option>
+    </select>
+    <span class="ctrl-label">Y axis</span>
+    <select class="ctrl-select" id="scatter-y" onchange="drawScatter()">
+      <option value="feeling_score">Feeling Score</option>
+      <option value="comfort_score">Comfort Score</option>
+    </select>
+    <span class="ctrl-label">Sites</span>
+    <div class="site-toggle" id="scatter-site-toggle"></div>
+  </div>
+  <div class="chart-card">
+    <div id="scatter-chart" style="height:440px"></div>
+  </div>
+  <p class="note">Each point is one site visit. Axes use Kestrel readings except <strong>Estimated temperature</strong>, which is the survey response (same question as the estimated vs. measured figure). With only ~90 visits, relationships are exploratory—use Timeseries for clearer site comparisons.</p>
+</div>
+
+<!-- TAB: HOBO -->
+<div id="tab-hobo" class="tab-panel">
+  <div class="controls">
+    <span class="ctrl-label">Sites</span>
+    <div class="site-toggle" id="hobo-site-toggle"></div>
+  </div>
+  <div class="chart-card" style="margin-bottom:20px">
+    <div class="section-title">Daily mean air temperature (°F) — HOBO logger</div>
+    <div id="hobo-temp-chart" style="height:300px"></div>
+  </div>
+  <div class="chart-card">
+    <div class="section-title">Daily mean relative humidity (%) — HOBO logger</div>
+    <div id="hobo-rh-chart" style="height:300px"></div>
+  </div>
+</div>
+
+<!-- TAB: RAW DATA -->
+<div id="tab-rawdata" class="tab-panel">
+  <div class="table-controls">
+    <span class="ctrl-label">Filter</span>
+    <input class="filter-input" type="text" id="raw-search" placeholder="Search any column…" oninput="filterTable()">
+    <select class="ctrl-select" id="raw-site" onchange="filterTable()">
+      <option value="">All sites</option>
+      <option value="1">Site 1</option>
+      <option value="2">Site 2</option>
+      <option value="3">Site 3</option>
+      <option value="4">Site 4</option>
+    </select>
+    <select class="ctrl-select" id="raw-feeling" onchange="filterTable()">
+      <option value="">All feelings</option>
+    </select>
+    <select class="ctrl-select" id="raw-comfort" onchange="filterTable()">
+      <option value="">All comfort</option>
+    </select>
+    <button class="export-btn" onclick="exportCSV()">Export CSV</button>
+  </div>
+  <div class="stat-row" id="raw-stats"></div>
+  <div class="table-wrap" style="max-height:560px; overflow-y:auto">
+    <table id="raw-table">
+      <thead>
+        <tr>
+          <th onclick="sortTable('site')">Site<span class="sort-icon"></span></th>
+          <th onclick="sortTable('visit_date')">Date<span class="sort-icon"></span></th>
+          <th onclick="sortTable('period_key')">Period<span class="sort-icon"></span></th>
+          <th onclick="sortTable('feeling_label')">Feeling<span class="sort-icon"></span></th>
+          <th onclick="sortTable('feeling_score')">Feel score<span class="sort-icon"></span></th>
+          <th onclick="sortTable('comfort_label')">Comfort<span class="sort-icon"></span></th>
+          <th onclick="sortTable('comfort_score')">Comf score<span class="sort-icon"></span></th>
+          <th onclick="sortTable('est_temp_f')">Estimated (°F)<span class="sort-icon"></span></th>
+          <th onclick="sortTable('air_temp_f')">Kestrel air (°F)<span class="sort-icon"></span></th>
+          <th onclick="sortTable('wbgt_f')">WBGT (°F)<span class="sort-icon"></span></th>
+          <th onclick="sortTable('rh_pct')">RH (%)<span class="sort-icon"></span></th>
+          <th onclick="sortTable('wind_mph')">Wind (mph)<span class="sort-icon"></span></th>
+        </tr>
+      </thead>
+      <tbody id="raw-tbody"></tbody>
+    </table>
+  </div>
+  <p class="note" id="raw-count" style="margin-top:10px"></p>
+</div>
+
+<!-- ═══════════════ SURVEY TABS ═══════════════ -->
+<div id="tab-sv-sociodem"       class="tab-panel sv-panel"></div>
+<div id="tab-sv-comfortability" class="tab-panel sv-panel"></div>
+<div id="tab-sv-decision"       class="tab-panel sv-panel"></div>
+<div id="tab-sv-green"          class="tab-panel sv-panel"></div>
+<div id="tab-sv-rawdata"        class="tab-panel sv-panel"></div>
+
+
+<script>
+// ── Embedded data ─────────────────────────────────────────────────────────────
+const DATA = {"visits": [{"site": 2, "visit_date": "2025-08-12", "period_key": "2pm", "feeling_label": "Very Hot", "feeling_score": 6, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 98.1, "air_temp_f": 95.6, "wbgt_f": 93.2, "rh_pct": 47.8, "wind_mph": 3.6}, {"site": 1, "visit_date": "2025-08-12", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 92.0, "air_temp_f": 93.1, "wbgt_f": 88.4, "rh_pct": 53.7, "wind_mph": 4.2}, {"site": 3, "visit_date": "2025-08-11", "period_key": "2pm", "feeling_label": "Very Hot", "feeling_score": 6, "comfort_label": "Very Uncomfortable", "comfort_score": 4, "est_temp_f": 95.0, "air_temp_f": 96.1, "wbgt_f": 93.3, "rh_pct": 50.5, "wind_mph": 1.3}, {"site": 4, "visit_date": "2025-08-12", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 91.0, "air_temp_f": 93.4, "wbgt_f": 92.7, "rh_pct": 52.4, "wind_mph": 3.1}, {"site": 4, "visit_date": "2025-08-15", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 93.5, "air_temp_f": 92.6, "wbgt_f": 83.1, "rh_pct": 52.0, "wind_mph": 3.2}, {"site": 1, "visit_date": "2025-08-15", "period_key": "2pm", "feeling_label": "Warm", "feeling_score": 4, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 88.0, "air_temp_f": 92.7, "wbgt_f": 88.3, "rh_pct": 51.8, "wind_mph": 1.9}, {"site": 3, "visit_date": "2025-08-15", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 98.1, "air_temp_f": 92.7, "wbgt_f": 84.6, "rh_pct": 58.1, "wind_mph": 0.0}, {"site": 2, "visit_date": "2025-08-15", "period_key": "2pm", "feeling_label": "Warm", "feeling_score": 4, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 89.0, "air_temp_f": 93.3, "wbgt_f": 85.4, "rh_pct": 52.7, "wind_mph": 1.3}, {"site": 1, "visit_date": "2025-08-15", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 86.0, "air_temp_f": 85.3, "wbgt_f": 82.2, "rh_pct": 78.4, "wind_mph": 4.0}, {"site": 3, "visit_date": "2025-08-15", "period_key": "6pm", "feeling_label": "Slightly Cool", "feeling_score": 1, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 72.3, "air_temp_f": 84.4, "wbgt_f": 80.8, "rh_pct": 76.5, "wind_mph": 0.0}, {"site": 4, "visit_date": "2025-08-15", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 91.0, "air_temp_f": 85.6, "wbgt_f": 85.1, "rh_pct": 79.0, "wind_mph": 6.6}, {"site": 2, "visit_date": "2025-08-15", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 84.0, "air_temp_f": 85.1, "wbgt_f": 80.9, "rh_pct": 83.3, "wind_mph": 3.7}, {"site": 4, "visit_date": "2025-08-19", "period_key": "2pm", "feeling_label": "Very Hot", "feeling_score": 6, "comfort_label": "Very Uncomfortable", "comfort_score": 4, "est_temp_f": 101.5, "air_temp_f": 99.3, "wbgt_f": 90.6, "rh_pct": 41.5, "wind_mph": 1.9}, {"site": 3, "visit_date": "2025-08-19", "period_key": "2pm", "feeling_label": "Very Hot", "feeling_score": 6, "comfort_label": "Very Uncomfortable", "comfort_score": 4, "est_temp_f": 100.0, "air_temp_f": 97.2, "wbgt_f": 87.7, "rh_pct": 45.1, "wind_mph": 3.6}, {"site": 2, "visit_date": "2025-08-19", "period_key": "2pm", "feeling_label": "Very Hot", "feeling_score": 6, "comfort_label": "Very Uncomfortable", "comfort_score": 4, "est_temp_f": 111.0, "air_temp_f": 96.6, "wbgt_f": 88.2, "rh_pct": 44.5, "wind_mph": 2.4}, {"site": 1, "visit_date": "2025-08-19", "period_key": "2pm", "feeling_label": "Very Hot", "feeling_score": 6, "comfort_label": "Very Uncomfortable", "comfort_score": 4, "est_temp_f": 100.0, "air_temp_f": 97.0, "wbgt_f": 87.7, "rh_pct": 45.8, "wind_mph": 1.2}, {"site": 4, "visit_date": "2025-08-19", "period_key": "6pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 90.0, "air_temp_f": 97.7, "wbgt_f": 86.0, "rh_pct": 51.0, "wind_mph": 1.1}, {"site": 3, "visit_date": "2025-08-19", "period_key": "6pm", "feeling_label": "Warm", "feeling_score": 4, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 91.4, "air_temp_f": 97.3, "wbgt_f": 86.3, "rh_pct": 51.3, "wind_mph": 0.0}, {"site": 2, "visit_date": "2025-08-19", "period_key": "6pm", "feeling_label": "Very Hot", "feeling_score": 6, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 100.2, "air_temp_f": 100.0, "wbgt_f": 90.1, "rh_pct": 33.2, "wind_mph": 0.0}, {"site": 1, "visit_date": "2025-08-19", "period_key": "6pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 98.0, "air_temp_f": 98.0, "wbgt_f": 88.1, "rh_pct": 50.6, "wind_mph": 1.0}, {"site": 3, "visit_date": "2025-08-22", "period_key": "2pm", "feeling_label": "Very Hot", "feeling_score": 6, "comfort_label": "Very Uncomfortable", "comfort_score": 4, "est_temp_f": 95.4, "air_temp_f": 91.0, "wbgt_f": 87.9, "rh_pct": 49.0, "wind_mph": 2.5}, {"site": 2, "visit_date": "2025-08-22", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 100.0, "air_temp_f": 95.5, "wbgt_f": 88.1, "rh_pct": 42.3, "wind_mph": 1.2}, {"site": 1, "visit_date": "2025-08-22", "period_key": "2pm", "feeling_label": "Very Hot", "feeling_score": 6, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 98.0, "air_temp_f": 89.9, "wbgt_f": 87.5, "rh_pct": 49.2, "wind_mph": 2.2}, {"site": 4, "visit_date": "2025-08-22", "period_key": "2pm", "feeling_label": "Very Hot", "feeling_score": 6, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 102.3, "air_temp_f": 91.7, "wbgt_f": 88.8, "rh_pct": 47.1, "wind_mph": 3.9}, {"site": 2, "visit_date": "2025-08-22", "period_key": "6pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 98.0, "air_temp_f": 94.0, "wbgt_f": 85.9, "rh_pct": 44.4, "wind_mph": 0.0}, {"site": 4, "visit_date": "2025-08-22", "period_key": "6pm", "feeling_label": "Very Hot", "feeling_score": 6, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 90.0, "air_temp_f": 92.2, "wbgt_f": 82.5, "rh_pct": 43.2, "wind_mph": 3.1}, {"site": 3, "visit_date": "2025-08-22", "period_key": "6pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 92.4, "air_temp_f": 91.6, "wbgt_f": 80.5, "rh_pct": 45.7, "wind_mph": 0.0}, {"site": 1, "visit_date": "2025-08-22", "period_key": "6pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 97.0, "air_temp_f": 99.9, "wbgt_f": 84.5, "rh_pct": 39.7, "wind_mph": 0.0}, {"site": 4, "visit_date": "2025-08-26", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 90.0, "air_temp_f": 86.4, "wbgt_f": 83.7, "rh_pct": 43.0, "wind_mph": 4.3}, {"site": 3, "visit_date": "2025-08-26", "period_key": "2pm", "feeling_label": "Warm", "feeling_score": 4, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 87.7, "air_temp_f": 86.9, "wbgt_f": 83.3, "rh_pct": 43.5, "wind_mph": 2.4}, {"site": 1, "visit_date": "2025-08-26", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 89.0, "air_temp_f": 88.1, "wbgt_f": 84.4, "rh_pct": 46.4, "wind_mph": 1.3}, {"site": 2, "visit_date": "2025-08-26", "period_key": "2pm", "feeling_label": "Warm", "feeling_score": 4, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 86.0, "air_temp_f": 88.3, "wbgt_f": 83.1, "rh_pct": 43.0, "wind_mph": 3.2}, {"site": 3, "visit_date": "2025-08-26", "period_key": "6pm", "feeling_label": "Slightly Warm", "feeling_score": 3, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 81.6, "air_temp_f": 85.0, "wbgt_f": 74.4, "rh_pct": 47.6, "wind_mph": 3.6}, {"site": 2, "visit_date": "2025-08-26", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 81.0, "air_temp_f": 84.3, "wbgt_f": 74.8, "rh_pct": 47.7, "wind_mph": 2.0}, {"site": 4, "visit_date": "2025-08-26", "period_key": "6pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 86.0, "air_temp_f": 85.1, "wbgt_f": 75.4, "rh_pct": 47.6, "wind_mph": 1.3}, {"site": 1, "visit_date": "2025-08-26", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 80.0, "air_temp_f": 83.9, "wbgt_f": 74.8, "rh_pct": 48.6, "wind_mph": 2.0}, {"site": 2, "visit_date": "2025-08-29", "period_key": "2pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 76.0, "air_temp_f": 75.8, "wbgt_f": 72.1, "rh_pct": 76.9, "wind_mph": 1.6}, {"site": 4, "visit_date": "2025-08-29", "period_key": "2pm", "feeling_label": "Slightly Cool", "feeling_score": 1, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 78.0, "air_temp_f": 74.8, "wbgt_f": 73.1, "rh_pct": 80.5, "wind_mph": 1.0}, {"site": 3, "visit_date": "2025-08-29", "period_key": "2pm", "feeling_label": "Slightly Cool", "feeling_score": 1, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 79.5, "air_temp_f": 73.5, "wbgt_f": 71.3, "rh_pct": 82.0, "wind_mph": 1.6}, {"site": 1, "visit_date": "2025-08-26", "period_key": "2pm", "feeling_label": "Slightly Cool", "feeling_score": 1, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 77.0, "air_temp_f": 73.6, "wbgt_f": 71.7, "rh_pct": 82.9, "wind_mph": 1.7}, {"site": 3, "visit_date": "2025-08-29", "period_key": "6pm", "feeling_label": "Slightly Cool", "feeling_score": 1, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 77.4, "air_temp_f": 75.0, "wbgt_f": 74.2, "rh_pct": 80.9, "wind_mph": 2.0}, {"site": 4, "visit_date": "2025-08-29", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 75.0, "air_temp_f": 76.2, "wbgt_f": 72.0, "rh_pct": 78.5, "wind_mph": 0.4}, {"site": 2, "visit_date": "2025-08-29", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 72.0, "air_temp_f": 76.0, "wbgt_f": 72.4, "rh_pct": 78.5, "wind_mph": 1.8}, {"site": 1, "visit_date": "2025-08-29", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 78.0, "air_temp_f": 75.7, "wbgt_f": 73.2, "rh_pct": 79.1, "wind_mph": 1.3}, {"site": 1, "visit_date": "2025-09-02", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 91.0, "air_temp_f": 90.2, "wbgt_f": 88.4, "rh_pct": 48.8, "wind_mph": 1.4}, {"site": 4, "visit_date": "2025-09-02", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 92.4, "air_temp_f": 89.5, "wbgt_f": 85.3, "rh_pct": 45.1, "wind_mph": 3.0}, {"site": 2, "visit_date": "2025-09-02", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 91.0, "air_temp_f": 91.2, "wbgt_f": 88.8, "rh_pct": 47.7, "wind_mph": 2.0}, {"site": 3, "visit_date": "2025-09-02", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 90.0, "air_temp_f": 87.5, "wbgt_f": 84.7, "rh_pct": 48.6, "wind_mph": 5.5}, {"site": 3, "visit_date": "2025-09-02", "period_key": "6pm", "feeling_label": "Warm", "feeling_score": 4, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 85.6, "air_temp_f": 83.7, "wbgt_f": 76.5, "rh_pct": 59.6, "wind_mph": 0.0}, {"site": 4, "visit_date": "2025-09-02", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 77.4, "air_temp_f": 84.4, "wbgt_f": 76.5, "rh_pct": 57.2, "wind_mph": 2.2}, {"site": 1, "visit_date": "2025-09-02", "period_key": "6pm", "feeling_label": "Slightly Warm", "feeling_score": 3, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 77.0, "air_temp_f": 83.3, "wbgt_f": 76.7, "rh_pct": 58.2, "wind_mph": 1.6}, {"site": 2, "visit_date": "2025-09-02", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 90.0, "air_temp_f": 84.0, "wbgt_f": 77.5, "rh_pct": 58.3, "wind_mph": 1.3}, {"site": 3, "visit_date": "2025-09-05", "period_key": "2pm", "feeling_label": "Warm", "feeling_score": 4, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 85.2, "air_temp_f": 93.5, "wbgt_f": 87.6, "rh_pct": 55.2, "wind_mph": 0.0}, {"site": 2, "visit_date": "2025-09-05", "period_key": "2pm", "feeling_label": "Slightly Warm", "feeling_score": 3, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 94.0, "air_temp_f": 88.1, "wbgt_f": 88.1, "rh_pct": 53.7, "wind_mph": 1.4}, {"site": 4, "visit_date": "2025-09-05", "period_key": "2pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 81.5, "air_temp_f": 91.2, "wbgt_f": 86.6, "rh_pct": 48.6, "wind_mph": 3.1}, {"site": 1, "visit_date": "2025-09-05", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 94.0, "air_temp_f": 89.4, "wbgt_f": 88.5, "rh_pct": 58.4, "wind_mph": 4.8}, {"site": 3, "visit_date": "2025-09-05", "period_key": "6pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 89.8, "air_temp_f": 86.5, "wbgt_f": 81.1, "rh_pct": 65.3, "wind_mph": 0.0}, {"site": 2, "visit_date": "2025-09-05", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 89.0, "air_temp_f": 88.7, "wbgt_f": 81.3, "rh_pct": 56.0, "wind_mph": 0.0}, {"site": 4, "visit_date": "2025-09-05", "period_key": "6pm", "feeling_label": "Slightly Warm", "feeling_score": 3, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 85.0, "air_temp_f": 89.7, "wbgt_f": 81.5, "rh_pct": 54.1, "wind_mph": 2.2}, {"site": 1, "visit_date": "2025-09-05", "period_key": "6pm", "feeling_label": "Warm", "feeling_score": 4, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 85.0, "air_temp_f": 89.0, "wbgt_f": 81.1, "rh_pct": 56.1, "wind_mph": 0.0}, {"site": 2, "visit_date": "2025-09-09", "period_key": "2pm", "feeling_label": "Very Hot", "feeling_score": 6, "comfort_label": "Very Uncomfortable", "comfort_score": 4, "est_temp_f": 93.0, "air_temp_f": 89.9, "wbgt_f": 85.2, "rh_pct": 49.7, "wind_mph": 1.1}, {"site": 4, "visit_date": "2025-09-09", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 93.0, "air_temp_f": 87.6, "wbgt_f": 82.9, "rh_pct": 54.9, "wind_mph": 2.7}, {"site": 3, "visit_date": "2025-09-09", "period_key": "2pm", "feeling_label": "Slightly Warm", "feeling_score": 3, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 78.2, "air_temp_f": 87.3, "wbgt_f": 84.1, "rh_pct": 53.33333333, "wind_mph": 4.4}, {"site": 1, "visit_date": "2025-09-09", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 90.0, "air_temp_f": 86.6, "wbgt_f": 81.3, "rh_pct": 55.4, "wind_mph": 0.0}, {"site": 4, "visit_date": "2025-09-09", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 80.0, "air_temp_f": 82.6, "wbgt_f": 78.8, "rh_pct": 64.8, "wind_mph": 2.1}, {"site": 1, "visit_date": "2025-09-09", "period_key": "6pm", "feeling_label": "Slightly Warm", "feeling_score": 3, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 82.0, "air_temp_f": 81.1, "wbgt_f": 79.3, "rh_pct": 69.0, "wind_mph": 3.5}, {"site": 2, "visit_date": "2025-09-09", "period_key": "6pm", "feeling_label": "Cool", "feeling_score": 1, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 90.0, "air_temp_f": 82.6, "wbgt_f": 79.1, "rh_pct": 64.2, "wind_mph": 2.8}, {"site": 3, "visit_date": "2025-09-09", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 87.0, "air_temp_f": 81.1, "wbgt_f": 76.2, "rh_pct": 67.3, "wind_mph": 1.3}, {"site": 4, "visit_date": "2025-09-12", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 92.0, "air_temp_f": 90.5, "wbgt_f": 74.3, "rh_pct": 43.1, "wind_mph": 1.5}, {"site": 3, "visit_date": "2025-09-12", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 94.5, "air_temp_f": 96.3, "wbgt_f": 89.2, "rh_pct": 45.7, "wind_mph": 0.0}, {"site": 2, "visit_date": "2025-09-12", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 96.0, "air_temp_f": 91.1, "wbgt_f": 91.0, "rh_pct": 37.0, "wind_mph": 1.0}, {"site": 1, "visit_date": "2025-09-12", "period_key": "2pm", "feeling_label": "Very Hot", "feeling_score": 6, "comfort_label": "Very Uncomfortable", "comfort_score": 4, "est_temp_f": 99.0, "air_temp_f": 96.9, "wbgt_f": 89.1, "rh_pct": 39.8, "wind_mph": 1.2}, {"site": 4, "visit_date": "2025-09-12", "period_key": "6pm", "feeling_label": "Warm", "feeling_score": 4, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 85.0, "air_temp_f": 88.9, "wbgt_f": 76.4, "rh_pct": 41.6, "wind_mph": 2.4}, {"site": 3, "visit_date": "2025-09-12", "period_key": "6pm", "feeling_label": "Warm", "feeling_score": 4, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 76.3, "air_temp_f": 89.0, "wbgt_f": 79.6, "rh_pct": 47.8, "wind_mph": 0.0}, {"site": 2, "visit_date": "2025-09-12", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 88.0, "air_temp_f": 90.1, "wbgt_f": 79.3, "rh_pct": 42.8, "wind_mph": 1.4}, {"site": 1, "visit_date": "2025-09-12", "period_key": "6pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 94.0, "air_temp_f": 89.9, "wbgt_f": 79.3, "rh_pct": 43.4, "wind_mph": 1.5}, {"site": 1, "visit_date": "2025-09-16", "period_key": "2pm", "feeling_label": "Warm", "feeling_score": 4, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 78.0, "air_temp_f": 86.7, "wbgt_f": 81.5, "rh_pct": 51.9, "wind_mph": 3.6}, {"site": 3, "visit_date": "2025-09-16", "period_key": "2pm", "feeling_label": "Warm", "feeling_score": 4, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 89.6, "air_temp_f": 87.4, "wbgt_f": 82.1, "rh_pct": 52.0, "wind_mph": 0.0}, {"site": 4, "visit_date": "2025-09-16", "period_key": "2pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 87.3, "air_temp_f": 90.8, "wbgt_f": 82.9, "rh_pct": 47.3, "wind_mph": 1.6}, {"site": 2, "visit_date": "2025-09-16", "period_key": "2pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 88.0, "air_temp_f": 82.1, "wbgt_f": 81.8, "rh_pct": 51.1, "wind_mph": 1.4}, {"site": 3, "visit_date": "2025-09-16", "period_key": "6pm", "feeling_label": "Slightly Warm", "feeling_score": 3, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 82.3, "air_temp_f": 88.1, "wbgt_f": 79.1, "rh_pct": 51.6, "wind_mph": 0.0}, {"site": 4, "visit_date": "2025-09-16", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 82.5, "air_temp_f": 90.7, "wbgt_f": 80.6, "rh_pct": 48.2, "wind_mph": 1.0}, {"site": 1, "visit_date": "2025-09-16", "period_key": "6pm", "feeling_label": "Warm", "feeling_score": 4, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 97.0, "air_temp_f": 89.4, "wbgt_f": 82.7, "rh_pct": 49.6, "wind_mph": 0.0}, {"site": 2, "visit_date": "2025-09-16", "period_key": "6pm", "feeling_label": "Slightly Warm", "feeling_score": 3, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 90.0, "air_temp_f": 91.2, "wbgt_f": 83.0, "rh_pct": 48.5, "wind_mph": 0.7}, {"site": 3, "visit_date": "2025-09-19", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Very Uncomfortable", "comfort_score": 4, "est_temp_f": 94.7, "air_temp_f": 92.6, "wbgt_f": 85.3, "rh_pct": 41.2, "wind_mph": 0.0}, {"site": 2, "visit_date": "2025-09-19", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 96.0, "air_temp_f": 94.7, "wbgt_f": 89.3, "rh_pct": 38.0, "wind_mph": 2.6}, {"site": 4, "visit_date": "2025-09-19", "period_key": "2pm", "feeling_label": "Hot", "feeling_score": 5, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 96.2, "air_temp_f": 92.4, "wbgt_f": 83.9, "rh_pct": 37.9, "wind_mph": 1.5}, {"site": 1, "visit_date": "2025-09-19", "period_key": "2pm", "feeling_label": "Very Hot", "feeling_score": 6, "comfort_label": "Very Uncomfortable", "comfort_score": 4, "est_temp_f": 96.0, "air_temp_f": 98.4, "wbgt_f": 92.5, "rh_pct": 34.4, "wind_mph": 1.7}, {"site": 4, "visit_date": "2025-09-19", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Comfortable", "comfort_score": 1, "est_temp_f": 83.1, "air_temp_f": 93.6, "wbgt_f": 79.8, "rh_pct": 36.5, "wind_mph": 0.0}, {"site": 3, "visit_date": "2025-09-19", "period_key": "6pm", "feeling_label": "Slightly Warm", "feeling_score": 3, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 81.3, "air_temp_f": 88.1, "wbgt_f": 78.9, "rh_pct": 49.8, "wind_mph": 0.0}, {"site": 2, "visit_date": "2025-09-19", "period_key": "6pm", "feeling_label": "Neutral", "feeling_score": 2, "comfort_label": "Slightly Uncomfortable", "comfort_score": 2, "est_temp_f": 89.0, "air_temp_f": 91.7, "wbgt_f": 79.0, "rh_pct": 38.2, "wind_mph": 0.0}, {"site": 1, "visit_date": "2025-09-19", "period_key": "6pm", "feeling_label": "Warm", "feeling_score": 4, "comfort_label": "Uncomfortable", "comfort_score": 3, "est_temp_f": 94.6, "air_temp_f": 89.5, "wbgt_f": 78.4, "rh_pct": 42.6, "wind_mph": 0.0}], "summary": {"n_visits": 92, "n_unique_days": 13, "first_visit_date": "2025-08-11", "last_visit_date": "2025-09-19", "hobo_calibration_note": "HOBO air temperature (\u00b0F) adjusted: Site 1 \u22120.36, Site 2 \u22121.04, Site 3 +0.46, Site 4 +0.93"}, "site_daily": [{"visit_date": "2025-08-11", "site": 3, "feeling": 6.0, "comfort": 4.0}, {"visit_date": "2025-08-12", "site": 1, "feeling": 5.0, "comfort": 3.0}, {"visit_date": "2025-08-12", "site": 2, "feeling": 6.0, "comfort": 3.0}, {"visit_date": "2025-08-12", "site": 4, "feeling": 5.0, "comfort": 2.0}, {"visit_date": "2025-08-15", "site": 1, "feeling": 3.0, "comfort": 2.0}, {"visit_date": "2025-08-15", "site": 2, "feeling": 3.0, "comfort": 1.5}, {"visit_date": "2025-08-15", "site": 3, "feeling": 3.0, "comfort": 1.5}, {"visit_date": "2025-08-15", "site": 4, "feeling": 3.5, "comfort": 2.5}, {"visit_date": "2025-08-19", "site": 1, "feeling": 5.5, "comfort": 3.0}, {"visit_date": "2025-08-19", "site": 2, "feeling": 6.0, "comfort": 3.5}, {"visit_date": "2025-08-19", "site": 3, "feeling": 5.0, "comfort": 3.5}, {"visit_date": "2025-08-19", "site": 4, "feeling": 5.5, "comfort": 3.5}, {"visit_date": "2025-08-22", "site": 1, "feeling": 5.5, "comfort": 3.0}, {"visit_date": "2025-08-22", "site": 2, "feeling": 5.0, "comfort": 3.0}, {"visit_date": "2025-08-22", "site": 3, "feeling": 5.5, "comfort": 3.0}, {"visit_date": "2025-08-22", "site": 4, "feeling": 6.0, "comfort": 3.0}, {"visit_date": "2025-08-26", "site": 1, "feeling": 2.6666666666666665, "comfort": 1.3333333333333333}, {"visit_date": "2025-08-26", "site": 2, "feeling": 3.0, "comfort": 1.0}, {"visit_date": "2025-08-26", "site": 3, "feeling": 3.5, "comfort": 1.5}, {"visit_date": "2025-08-26", "site": 4, "feeling": 5.0, "comfort": 2.5}, {"visit_date": "2025-08-29", "site": 1, "feeling": 2.0, "comfort": 1.0}, {"visit_date": "2025-08-29", "site": 2, "feeling": 2.0, "comfort": 1.0}, {"visit_date": "2025-08-29", "site": 3, "feeling": 1.0, "comfort": 1.0}, {"visit_date": "2025-08-29", "site": 4, "feeling": 1.5, "comfort": 1.0}, {"visit_date": "2025-09-02", "site": 1, "feeling": 4.0, "comfort": 2.0}, {"visit_date": "2025-09-02", "site": 2, "feeling": 3.5, "comfort": 2.0}, {"visit_date": "2025-09-02", "site": 3, "feeling": 4.5, "comfort": 2.5}, {"visit_date": "2025-09-02", "site": 4, "feeling": 3.5, "comfort": 2.0}, {"visit_date": "2025-09-05", "site": 1, "feeling": 4.5, "comfort": 2.0}, {"visit_date": "2025-09-05", "site": 2, "feeling": 2.5, "comfort": 1.5}, {"visit_date": "2025-09-05", "site": 3, "feeling": 4.5, "comfort": 2.5}, {"visit_date": "2025-09-05", "site": 4, "feeling": 2.5, "comfort": 1.5}, {"visit_date": "2025-09-09", "site": 1, "feeling": 4.0, "comfort": 1.5}, {"visit_date": "2025-09-09", "site": 2, "feeling": 3.5, "comfort": 2.5}, {"visit_date": "2025-09-09", "site": 3, "feeling": 2.5, "comfort": 1.5}, {"visit_date": "2025-09-09", "site": 4, "feeling": 3.5, "comfort": 1.5}, {"visit_date": "2025-09-12", "site": 1, "feeling": 5.5, "comfort": 3.0}, {"visit_date": "2025-09-12", "site": 2, "feeling": 3.5, "comfort": 2.0}, {"visit_date": "2025-09-12", "site": 3, "feeling": 4.5, "comfort": 2.5}, {"visit_date": "2025-09-12", "site": 4, "feeling": 4.5, "comfort": 2.5}, {"visit_date": "2025-09-16", "site": 1, "feeling": 4.0, "comfort": 1.5}, {"visit_date": "2025-09-16", "site": 2, "feeling": 2.5, "comfort": 1.0}, {"visit_date": "2025-09-16", "site": 3, "feeling": 3.5, "comfort": 2.0}, {"visit_date": "2025-09-16", "site": 4, "feeling": 2.0, "comfort": 1.0}, {"visit_date": "2025-09-19", "site": 1, "feeling": 5.0, "comfort": 3.5}, {"visit_date": "2025-09-19", "site": 2, "feeling": 3.5, "comfort": 2.5}, {"visit_date": "2025-09-19", "site": 3, "feeling": 4.0, "comfort": 3.0}, {"visit_date": "2025-09-19", "site": 4, "feeling": 3.5, "comfort": 2.0}], "site_avgs": [{"site": 1, "air_temp_f": 89.03, "wbgt_f": 83.03, "rh_pct": 53.64, "wind_mph": 1.74, "feeling_score": 4.22, "comfort_score": 2.22}, {"site": 2, "air_temp_f": 89.13, "wbgt_f": 83.37, "rh_pct": 51.28, "wind_mph": 1.59, "feeling_score": 3.57, "comfort_score": 2.0}, {"site": 3, "air_temp_f": 88.34, "wbgt_f": 82.12, "rh_pct": 55.11, "wind_mph": 1.23, "feeling_score": 3.87, "comfort_score": 2.3}, {"site": 4, "air_temp_f": 89.0, "wbgt_f": 81.85, "rh_pct": 51.96, "wind_mph": 2.31, "feeling_score": 3.78, "comfort_score": 2.09}], "perception_by_site": [{"site": 1, "feeling_mean": 4.2174, "feeling_sem": 0.3012, "comfort_mean": 2.2174, "comfort_sem": 0.2081, "n": 23}, {"site": 2, "feeling_mean": 3.5652, "feeling_sem": 0.3547, "comfort_mean": 2.0, "comfort_sem": 0.2267, "n": 23}, {"site": 3, "feeling_mean": 3.8696, "feeling_sem": 0.3224, "comfort_mean": 2.3043, "comfort_sem": 0.2217, "n": 23}, {"site": 4, "feeling_mean": 3.7826, "feeling_sem": 0.3498, "comfort_mean": 2.087, "comfort_sem": 0.1979, "n": 23}], "est_vs_measured": [{"site": 2, "est_temp_f": 98.1, "air_temp_f": 95.6}, {"site": 1, "est_temp_f": 92.0, "air_temp_f": 93.1}, {"site": 3, "est_temp_f": 95.0, "air_temp_f": 96.1}, {"site": 4, "est_temp_f": 91.0, "air_temp_f": 93.4}, {"site": 4, "est_temp_f": 93.5, "air_temp_f": 92.6}, {"site": 1, "est_temp_f": 88.0, "air_temp_f": 92.7}, {"site": 3, "est_temp_f": 98.1, "air_temp_f": 92.7}, {"site": 2, "est_temp_f": 89.0, "air_temp_f": 93.3}, {"site": 1, "est_temp_f": 86.0, "air_temp_f": 85.3}, {"site": 3, "est_temp_f": 72.3, "air_temp_f": 84.4}, {"site": 4, "est_temp_f": 91.0, "air_temp_f": 85.6}, {"site": 2, "est_temp_f": 84.0, "air_temp_f": 85.1}, {"site": 4, "est_temp_f": 101.5, "air_temp_f": 99.3}, {"site": 3, "est_temp_f": 100.0, "air_temp_f": 97.2}, {"site": 2, "est_temp_f": 111.0, "air_temp_f": 96.6}, {"site": 1, "est_temp_f": 100.0, "air_temp_f": 97.0}, {"site": 4, "est_temp_f": 90.0, "air_temp_f": 97.7}, {"site": 3, "est_temp_f": 91.4, "air_temp_f": 97.3}, {"site": 2, "est_temp_f": 100.2, "air_temp_f": 100.0}, {"site": 1, "est_temp_f": 98.0, "air_temp_f": 98.0}, {"site": 3, "est_temp_f": 95.4, "air_temp_f": 91.0}, {"site": 2, "est_temp_f": 100.0, "air_temp_f": 95.5}, {"site": 1, "est_temp_f": 98.0, "air_temp_f": 89.9}, {"site": 4, "est_temp_f": 102.3, "air_temp_f": 91.7}, {"site": 2, "est_temp_f": 98.0, "air_temp_f": 94.0}, {"site": 4, "est_temp_f": 90.0, "air_temp_f": 92.2}, {"site": 3, "est_temp_f": 92.4, "air_temp_f": 91.6}, {"site": 1, "est_temp_f": 97.0, "air_temp_f": 99.9}, {"site": 4, "est_temp_f": 90.0, "air_temp_f": 86.4}, {"site": 3, "est_temp_f": 87.7, "air_temp_f": 86.9}, {"site": 1, "est_temp_f": 89.0, "air_temp_f": 88.1}, {"site": 2, "est_temp_f": 86.0, "air_temp_f": 88.3}, {"site": 3, "est_temp_f": 81.6, "air_temp_f": 85.0}, {"site": 2, "est_temp_f": 81.0, "air_temp_f": 84.3}, {"site": 4, "est_temp_f": 86.0, "air_temp_f": 85.1}, {"site": 1, "est_temp_f": 80.0, "air_temp_f": 83.9}, {"site": 2, "est_temp_f": 76.0, "air_temp_f": 75.8}, {"site": 4, "est_temp_f": 78.0, "air_temp_f": 74.8}, {"site": 3, "est_temp_f": 79.5, "air_temp_f": 73.5}, {"site": 1, "est_temp_f": 77.0, "air_temp_f": 73.6}, {"site": 3, "est_temp_f": 77.4, "air_temp_f": 75.0}, {"site": 4, "est_temp_f": 75.0, "air_temp_f": 76.2}, {"site": 2, "est_temp_f": 72.0, "air_temp_f": 76.0}, {"site": 1, "est_temp_f": 78.0, "air_temp_f": 75.7}, {"site": 1, "est_temp_f": 91.0, "air_temp_f": 90.2}, {"site": 4, "est_temp_f": 92.4, "air_temp_f": 89.5}, {"site": 2, "est_temp_f": 91.0, "air_temp_f": 91.2}, {"site": 3, "est_temp_f": 90.0, "air_temp_f": 87.5}, {"site": 3, "est_temp_f": 85.6, "air_temp_f": 83.7}, {"site": 4, "est_temp_f": 77.4, "air_temp_f": 84.4}, {"site": 1, "est_temp_f": 77.0, "air_temp_f": 83.3}, {"site": 2, "est_temp_f": 90.0, "air_temp_f": 84.0}, {"site": 3, "est_temp_f": 85.2, "air_temp_f": 93.5}, {"site": 2, "est_temp_f": 94.0, "air_temp_f": 88.1}, {"site": 4, "est_temp_f": 81.5, "air_temp_f": 91.2}, {"site": 1, "est_temp_f": 94.0, "air_temp_f": 89.4}, {"site": 3, "est_temp_f": 89.8, "air_temp_f": 86.5}, {"site": 2, "est_temp_f": 89.0, "air_temp_f": 88.7}, {"site": 4, "est_temp_f": 85.0, "air_temp_f": 89.7}, {"site": 1, "est_temp_f": 85.0, "air_temp_f": 89.0}, {"site": 2, "est_temp_f": 93.0, "air_temp_f": 89.9}, {"site": 4, "est_temp_f": 93.0, "air_temp_f": 87.6}, {"site": 3, "est_temp_f": 78.2, "air_temp_f": 87.3}, {"site": 1, "est_temp_f": 90.0, "air_temp_f": 86.6}, {"site": 4, "est_temp_f": 80.0, "air_temp_f": 82.6}, {"site": 1, "est_temp_f": 82.0, "air_temp_f": 81.1}, {"site": 2, "est_temp_f": 90.0, "air_temp_f": 82.6}, {"site": 3, "est_temp_f": 87.0, "air_temp_f": 81.1}, {"site": 4, "est_temp_f": 92.0, "air_temp_f": 90.5}, {"site": 3, "est_temp_f": 94.5, "air_temp_f": 96.3}, {"site": 2, "est_temp_f": 96.0, "air_temp_f": 91.1}, {"site": 1, "est_temp_f": 99.0, "air_temp_f": 96.9}, {"site": 4, "est_temp_f": 85.0, "air_temp_f": 88.9}, {"site": 3, "est_temp_f": 76.3, "air_temp_f": 89.0}, {"site": 2, "est_temp_f": 88.0, "air_temp_f": 90.1}, {"site": 1, "est_temp_f": 94.0, "air_temp_f": 89.9}, {"site": 1, "est_temp_f": 78.0, "air_temp_f": 86.7}, {"site": 3, "est_temp_f": 89.6, "air_temp_f": 87.4}, {"site": 4, "est_temp_f": 87.3, "air_temp_f": 90.8}, {"site": 2, "est_temp_f": 88.0, "air_temp_f": 82.1}, {"site": 3, "est_temp_f": 82.3, "air_temp_f": 88.1}, {"site": 4, "est_temp_f": 82.5, "air_temp_f": 90.7}, {"site": 1, "est_temp_f": 97.0, "air_temp_f": 89.4}, {"site": 2, "est_temp_f": 90.0, "air_temp_f": 91.2}, {"site": 3, "est_temp_f": 94.7, "air_temp_f": 92.6}, {"site": 2, "est_temp_f": 96.0, "air_temp_f": 94.7}, {"site": 4, "est_temp_f": 96.2, "air_temp_f": 92.4}, {"site": 1, "est_temp_f": 96.0, "air_temp_f": 98.4}, {"site": 4, "est_temp_f": 83.1, "air_temp_f": 93.6}, {"site": 3, "est_temp_f": 81.3, "air_temp_f": 88.1}, {"site": 2, "est_temp_f": 89.0, "air_temp_f": 91.7}, {"site": 1, "est_temp_f": 94.6, "air_temp_f": 89.5}], "hobo_diurnal": [{"site": 1, "hour": 0.0, "temp_f": 75.886}, {"site": 1, "hour": 0.25, "temp_f": 75.6}, {"site": 1, "hour": 0.5, "temp_f": 75.479}, {"site": 1, "hour": 0.75, "temp_f": 75.361}, {"site": 1, "hour": 1.0, "temp_f": 75.174}, {"site": 1, "hour": 1.25, "temp_f": 75.011}, {"site": 1, "hour": 1.5, "temp_f": 74.694}, {"site": 1, "hour": 1.75, "temp_f": 74.534}, {"site": 1, "hour": 2.0, "temp_f": 74.327}, {"site": 1, "hour": 2.25, "temp_f": 74.042}, {"site": 1, "hour": 2.5, "temp_f": 73.932}, {"site": 1, "hour": 2.75, "temp_f": 73.761}, {"site": 1, "hour": 3.0, "temp_f": 73.518}, {"site": 1, "hour": 3.25, "temp_f": 73.539}, {"site": 1, "hour": 3.5, "temp_f": 73.311}, {"site": 1, "hour": 3.75, "temp_f": 73.172}, {"site": 1, "hour": 4.0, "temp_f": 73.034}, {"site": 1, "hour": 4.25, "temp_f": 72.795}, {"site": 1, "hour": 4.5, "temp_f": 72.683}, {"site": 1, "hour": 4.75, "temp_f": 72.568}, {"site": 1, "hour": 5.0, "temp_f": 72.467}, {"site": 1, "hour": 5.25, "temp_f": 72.397}, {"site": 1, "hour": 5.5, "temp_f": 72.161}, {"site": 1, "hour": 5.75, "temp_f": 72.017}, {"site": 1, "hour": 6.0, "temp_f": 71.946}, {"site": 1, "hour": 6.25, "temp_f": 71.857}, {"site": 1, "hour": 6.5, "temp_f": 71.815}, {"site": 1, "hour": 6.75, "temp_f": 71.733}, {"site": 1, "hour": 7.0, "temp_f": 71.782}, {"site": 1, "hour": 7.25, "temp_f": 72.046}, {"site": 1, "hour": 7.5, "temp_f": 72.742}, {"site": 1, "hour": 7.75, "temp_f": 74.097}, {"site": 1, "hour": 8.0, "temp_f": 75.508}, {"site": 1, "hour": 8.25, "temp_f": 76.592}, {"site": 1, "hour": 8.5, "temp_f": 77.628}, {"site": 1, "hour": 8.75, "temp_f": 78.489}, {"site": 1, "hour": 9.0, "temp_f": 79.544}, {"site": 1, "hour": 9.25, "temp_f": 80.09}, {"site": 1, "hour": 9.5, "temp_f": 81.073}, {"site": 1, "hour": 9.75, "temp_f": 82.001}, {"site": 1, "hour": 10.0, "temp_f": 82.638}, {"site": 1, "hour": 10.25, "temp_f": 83.119}, {"site": 1, "hour": 10.5, "temp_f": 84.059}, {"site": 1, "hour": 10.75, "temp_f": 84.636}, {"site": 1, "hour": 11.0, "temp_f": 85.281}, {"site": 1, "hour": 11.25, "temp_f": 85.848}, {"site": 1, "hour": 11.5, "temp_f": 86.614}, {"site": 1, "hour": 11.75, "temp_f": 86.747}, {"site": 1, "hour": 12.0, "temp_f": 87.299}, {"site": 1, "hour": 12.25, "temp_f": 87.768}, {"site": 1, "hour": 12.5, "temp_f": 87.901}, {"site": 1, "hour": 12.75, "temp_f": 88.158}, {"site": 1, "hour": 13.0, "temp_f": 88.6}, {"site": 1, "hour": 13.25, "temp_f": 88.934}, {"site": 1, "hour": 13.5, "temp_f": 89.118}, {"site": 1, "hour": 13.75, "temp_f": 89.329}, {"site": 1, "hour": 14.0, "temp_f": 89.38}, {"site": 1, "hour": 14.25, "temp_f": 89.213}, {"site": 1, "hour": 14.5, "temp_f": 89.247}, {"site": 1, "hour": 14.75, "temp_f": 89.486}, {"site": 1, "hour": 15.0, "temp_f": 89.435}, {"site": 1, "hour": 15.25, "temp_f": 89.791}, {"site": 1, "hour": 15.5, "temp_f": 90.174}, {"site": 1, "hour": 15.75, "temp_f": 89.749}, {"site": 1, "hour": 16.0, "temp_f": 89.497}, {"site": 1, "hour": 16.25, "temp_f": 89.423}, {"site": 1, "hour": 16.5, "temp_f": 89.512}, {"site": 1, "hour": 16.75, "temp_f": 89.538}, {"site": 1, "hour": 17.0, "temp_f": 89.231}, {"site": 1, "hour": 17.25, "temp_f": 88.937}, {"site": 1, "hour": 17.5, "temp_f": 88.477}, {"site": 1, "hour": 17.75, "temp_f": 87.772}, {"site": 1, "hour": 18.0, "temp_f": 87.404}, {"site": 1, "hour": 18.25, "temp_f": 86.836}, {"site": 1, "hour": 18.5, "temp_f": 86.346}, {"site": 1, "hour": 18.75, "temp_f": 85.67}, {"site": 1, "hour": 19.0, "temp_f": 84.872}, {"site": 1, "hour": 19.25, "temp_f": 84.03}, {"site": 1, "hour": 19.5, "temp_f": 83.33}, {"site": 1, "hour": 19.75, "temp_f": 82.686}, {"site": 1, "hour": 20.0, "temp_f": 82.115}, {"site": 1, "hour": 20.25, "temp_f": 81.462}, {"site": 1, "hour": 20.5, "temp_f": 80.886}, {"site": 1, "hour": 20.75, "temp_f": 80.398}, {"site": 1, "hour": 21.0, "temp_f": 79.914}, {"site": 1, "hour": 21.25, "temp_f": 79.335}, {"site": 1, "hour": 21.5, "temp_f": 78.955}, {"site": 1, "hour": 21.75, "temp_f": 78.493}, {"site": 1, "hour": 22.0, "temp_f": 78.101}, {"site": 1, "hour": 22.25, "temp_f": 77.748}, {"site": 1, "hour": 22.5, "temp_f": 77.444}, {"site": 1, "hour": 22.75, "temp_f": 77.0}, {"site": 1, "hour": 23.0, "temp_f": 76.726}, {"site": 1, "hour": 23.25, "temp_f": 76.48}, {"site": 1, "hour": 23.5, "temp_f": 76.315}, {"site": 1, "hour": 23.75, "temp_f": 76.06}, {"site": 2, "hour": 0.0833, "temp_f": 74.804}, {"site": 2, "hour": 0.3333, "temp_f": 74.602}, {"site": 2, "hour": 0.5833, "temp_f": 74.535}, {"site": 2, "hour": 0.8333, "temp_f": 74.377}, {"site": 2, "hour": 1.0833, "temp_f": 74.155}, {"site": 2, "hour": 1.3333, "temp_f": 73.949}, {"site": 2, "hour": 1.5833, "temp_f": 73.635}, {"site": 2, "hour": 1.8333, "temp_f": 73.442}, {"site": 2, "hour": 2.0833, "temp_f": 73.268}, {"site": 2, "hour": 2.3333, "temp_f": 73.062}, {"site": 2, "hour": 2.5833, "temp_f": 73.001}, {"site": 2, "hour": 2.8333, "temp_f": 72.689}, {"site": 2, "hour": 3.0833, "temp_f": 72.529}, {"site": 2, "hour": 3.3333, "temp_f": 72.475}, {"site": 2, "hour": 3.5833, "temp_f": 72.304}, {"site": 2, "hour": 3.8333, "temp_f": 72.173}, {"site": 2, "hour": 4.0833, "temp_f": 71.942}, {"site": 2, "hour": 4.3333, "temp_f": 71.859}, {"site": 2, "hour": 4.5833, "temp_f": 71.7}, {"site": 2, "hour": 4.8333, "temp_f": 71.604}, {"site": 2, "hour": 5.0833, "temp_f": 71.45}, {"site": 2, "hour": 5.3333, "temp_f": 71.37}, {"site": 2, "hour": 5.5833, "temp_f": 71.136}, {"site": 2, "hour": 5.8333, "temp_f": 71.066}, {"site": 2, "hour": 6.0833, "temp_f": 71.043}, {"site": 2, "hour": 6.3333, "temp_f": 70.939}, {"site": 2, "hour": 6.5833, "temp_f": 70.89}, {"site": 2, "hour": 6.8333, "temp_f": 70.821}, {"site": 2, "hour": 7.0833, "temp_f": 71.049}, {"site": 2, "hour": 7.3333, "temp_f": 71.717}, {"site": 2, "hour": 7.5833, "temp_f": 72.91}, {"site": 2, "hour": 7.8333, "temp_f": 74.419}, {"site": 2, "hour": 8.0833, "temp_f": 75.665}, {"site": 2, "hour": 8.3333, "temp_f": 77.019}, {"site": 2, "hour": 8.5833, "temp_f": 77.667}, {"site": 2, "hour": 8.8333, "temp_f": 78.789}, {"site": 2, "hour": 9.0833, "temp_f": 79.801}, {"site": 2, "hour": 9.3333, "temp_f": 80.509}, {"site": 2, "hour": 9.5833, "temp_f": 81.283}, {"site": 2, "hour": 9.8333, "temp_f": 82.027}, {"site": 2, "hour": 10.0833, "temp_f": 82.784}, {"site": 2, "hour": 10.3333, "temp_f": 83.529}, {"site": 2, "hour": 10.5833, "temp_f": 84.032}, {"site": 2, "hour": 10.8333, "temp_f": 84.671}, {"site": 2, "hour": 11.0833, "temp_f": 85.283}, {"site": 2, "hour": 11.3333, "temp_f": 85.848}, {"site": 2, "hour": 11.5833, "temp_f": 86.494}, {"site": 2, "hour": 11.8333, "temp_f": 86.706}, {"site": 2, "hour": 12.0833, "temp_f": 87.127}, {"site": 2, "hour": 12.3333, "temp_f": 87.63}, {"site": 2, "hour": 12.5833, "temp_f": 87.566}, {"site": 2, "hour": 12.8333, "temp_f": 87.829}, {"site": 2, "hour": 13.0833, "temp_f": 88.128}, {"site": 2, "hour": 13.3333, "temp_f": 88.167}, {"site": 2, "hour": 13.5833, "temp_f": 88.306}, {"site": 2, "hour": 13.8333, "temp_f": 88.772}, {"site": 2, "hour": 14.0833, "temp_f": 88.439}, {"site": 2, "hour": 14.3333, "temp_f": 88.425}, {"site": 2, "hour": 14.5833, "temp_f": 88.844}, {"site": 2, "hour": 14.8333, "temp_f": 88.939}, {"site": 2, "hour": 15.0833, "temp_f": 88.896}, {"site": 2, "hour": 15.3333, "temp_f": 89.119}, {"site": 2, "hour": 15.5833, "temp_f": 89.341}, {"site": 2, "hour": 15.8333, "temp_f": 89.088}, {"site": 2, "hour": 16.0833, "temp_f": 88.834}, {"site": 2, "hour": 16.3333, "temp_f": 88.724}, {"site": 2, "hour": 16.5833, "temp_f": 88.781}, {"site": 2, "hour": 16.8333, "temp_f": 88.888}, {"site": 2, "hour": 17.0833, "temp_f": 88.645}, {"site": 2, "hour": 17.3333, "temp_f": 88.425}, {"site": 2, "hour": 17.5833, "temp_f": 87.78}, {"site": 2, "hour": 17.8333, "temp_f": 87.156}, {"site": 2, "hour": 18.0833, "temp_f": 86.657}, {"site": 2, "hour": 18.3333, "temp_f": 86.212}, {"site": 2, "hour": 18.5833, "temp_f": 85.56}, {"site": 2, "hour": 18.8333, "temp_f": 84.744}, {"site": 2, "hour": 19.0833, "temp_f": 83.918}, {"site": 2, "hour": 19.3333, "temp_f": 83.064}, {"site": 2, "hour": 19.5833, "temp_f": 82.286}, {"site": 2, "hour": 19.8333, "temp_f": 81.656}, {"site": 2, "hour": 20.0833, "temp_f": 80.947}, {"site": 2, "hour": 20.3333, "temp_f": 80.195}, {"site": 2, "hour": 20.5833, "temp_f": 79.731}, {"site": 2, "hour": 20.8333, "temp_f": 79.261}, {"site": 2, "hour": 21.0833, "temp_f": 78.664}, {"site": 2, "hour": 21.3333, "temp_f": 78.212}, {"site": 2, "hour": 21.5833, "temp_f": 77.794}, {"site": 2, "hour": 21.8333, "temp_f": 77.341}, {"site": 2, "hour": 22.0833, "temp_f": 77.06}, {"site": 2, "hour": 22.3333, "temp_f": 76.658}, {"site": 2, "hour": 22.5833, "temp_f": 76.192}, {"site": 2, "hour": 22.8333, "temp_f": 75.786}, {"site": 2, "hour": 23.0833, "temp_f": 75.582}, {"site": 2, "hour": 23.3333, "temp_f": 75.41}, {"site": 2, "hour": 23.5833, "temp_f": 75.21}, {"site": 2, "hour": 23.8333, "temp_f": 75.013}, {"site": 3, "hour": 0.15, "temp_f": 75.926}, {"site": 3, "hour": 0.4, "temp_f": 75.759}, {"site": 3, "hour": 0.65, "temp_f": 75.792}, {"site": 3, "hour": 0.9, "temp_f": 75.73}, {"site": 3, "hour": 1.15, "temp_f": 75.508}, {"site": 3, "hour": 1.4, "temp_f": 75.239}, {"site": 3, "hour": 1.65, "temp_f": 74.977}, {"site": 3, "hour": 1.9, "temp_f": 74.815}, {"site": 3, "hour": 2.15, "temp_f": 74.586}, {"site": 3, "hour": 2.4, "temp_f": 74.463}, {"site": 3, "hour": 2.65, "temp_f": 74.329}, {"site": 3, "hour": 2.9, "temp_f": 74.023}, {"site": 3, "hour": 3.15, "temp_f": 73.976}, {"site": 3, "hour": 3.4, "temp_f": 73.912}, {"site": 3, "hour": 3.65, "temp_f": 73.658}, {"site": 3, "hour": 3.9, "temp_f": 73.527}, {"site": 3, "hour": 4.15, "temp_f": 73.359}, {"site": 3, "hour": 4.4, "temp_f": 73.274}, {"site": 3, "hour": 4.65, "temp_f": 73.098}, {"site": 3, "hour": 4.9, "temp_f": 72.944}, {"site": 3, "hour": 5.15, "temp_f": 72.867}, {"site": 3, "hour": 5.4, "temp_f": 72.706}, {"site": 3, "hour": 5.65, "temp_f": 72.505}, {"site": 3, "hour": 5.9, "temp_f": 72.556}, {"site": 3, "hour": 6.15, "temp_f": 72.523}, {"site": 3, "hour": 6.4, "temp_f": 72.346}, {"site": 3, "hour": 6.65, "temp_f": 72.343}, {"site": 3, "hour": 6.9, "temp_f": 72.355}, {"site": 3, "hour": 7.15, "temp_f": 73.042}, {"site": 3, "hour": 7.4, "temp_f": 74.078}, {"site": 3, "hour": 7.65, "temp_f": 75.226}, {"site": 3, "hour": 7.9, "temp_f": 76.436}, {"site": 3, "hour": 8.15, "temp_f": 77.443}, {"site": 3, "hour": 8.4, "temp_f": 78.722}, {"site": 3, "hour": 8.65, "temp_f": 79.745}, {"site": 3, "hour": 8.9, "temp_f": 80.963}, {"site": 3, "hour": 9.15, "temp_f": 81.716}, {"site": 3, "hour": 9.4, "temp_f": 82.703}, {"site": 3, "hour": 9.65, "temp_f": 83.397}, {"site": 3, "hour": 9.9, "temp_f": 84.15}, {"site": 3, "hour": 10.15, "temp_f": 84.612}, {"site": 3, "hour": 10.4, "temp_f": 85.355}, {"site": 3, "hour": 10.65, "temp_f": 86.05}, {"site": 3, "hour": 10.9, "temp_f": 86.625}, {"site": 3, "hour": 11.15, "temp_f": 87.225}, {"site": 3, "hour": 11.4, "temp_f": 87.642}, {"site": 3, "hour": 11.65, "temp_f": 87.907}, {"site": 3, "hour": 11.9, "temp_f": 88.522}, {"site": 3, "hour": 12.15, "temp_f": 88.81}, {"site": 3, "hour": 12.4, "temp_f": 89.125}, {"site": 3, "hour": 12.65, "temp_f": 88.908}, {"site": 3, "hour": 12.9, "temp_f": 89.194}, {"site": 3, "hour": 13.15, "temp_f": 89.424}, {"site": 3, "hour": 13.4, "temp_f": 89.542}, {"site": 3, "hour": 13.65, "temp_f": 89.809}, {"site": 3, "hour": 13.9, "temp_f": 89.831}, {"site": 3, "hour": 14.15, "temp_f": 89.738}, {"site": 3, "hour": 14.4, "temp_f": 89.669}, {"site": 3, "hour": 14.65, "temp_f": 89.841}, {"site": 3, "hour": 14.9, "temp_f": 89.627}, {"site": 3, "hour": 15.15, "temp_f": 89.781}, {"site": 3, "hour": 15.4, "temp_f": 89.706}, {"site": 3, "hour": 15.65, "temp_f": 89.513}, {"site": 3, "hour": 15.9, "temp_f": 89.404}, {"site": 3, "hour": 16.15, "temp_f": 89.032}, {"site": 3, "hour": 16.4, "temp_f": 88.813}, {"site": 3, "hour": 16.65, "temp_f": 88.844}, {"site": 3, "hour": 16.9, "temp_f": 88.854}, {"site": 3, "hour": 17.15, "temp_f": 88.65}, {"site": 3, "hour": 17.4, "temp_f": 88.308}, {"site": 3, "hour": 17.65, "temp_f": 87.706}, {"site": 3, "hour": 17.9, "temp_f": 87.232}, {"site": 3, "hour": 18.15, "temp_f": 86.806}, {"site": 3, "hour": 18.4, "temp_f": 86.344}, {"site": 3, "hour": 18.65, "temp_f": 85.904}, {"site": 3, "hour": 18.9, "temp_f": 85.436}, {"site": 3, "hour": 19.15, "temp_f": 84.648}, {"site": 3, "hour": 19.4, "temp_f": 83.577}, {"site": 3, "hour": 19.65, "temp_f": 82.951}, {"site": 3, "hour": 19.9, "temp_f": 82.248}, {"site": 3, "hour": 20.15, "temp_f": 81.638}, {"site": 3, "hour": 20.4, "temp_f": 81.074}, {"site": 3, "hour": 20.65, "temp_f": 80.529}, {"site": 3, "hour": 20.9, "temp_f": 80.025}, {"site": 3, "hour": 21.15, "temp_f": 79.443}, {"site": 3, "hour": 21.4, "temp_f": 79.092}, {"site": 3, "hour": 21.65, "temp_f": 78.775}, {"site": 3, "hour": 21.9, "temp_f": 78.403}, {"site": 3, "hour": 22.15, "temp_f": 77.986}, {"site": 3, "hour": 22.4, "temp_f": 77.518}, {"site": 3, "hour": 22.65, "temp_f": 77.089}, {"site": 3, "hour": 22.9, "temp_f": 76.753}, {"site": 3, "hour": 23.15, "temp_f": 76.574}, {"site": 3, "hour": 23.4, "temp_f": 76.416}, {"site": 3, "hour": 23.65, "temp_f": 76.253}, {"site": 3, "hour": 23.9, "temp_f": 76.135}, {"site": 4, "hour": 0.1, "temp_f": 77.745}, {"site": 4, "hour": 0.35, "temp_f": 77.537}, {"site": 4, "hour": 0.6, "temp_f": 77.368}, {"site": 4, "hour": 0.85, "temp_f": 77.205}, {"site": 4, "hour": 1.1, "temp_f": 77.024}, {"site": 4, "hour": 1.35, "temp_f": 76.676}, {"site": 4, "hour": 1.6, "temp_f": 76.475}, {"site": 4, "hour": 1.85, "temp_f": 76.338}, {"site": 4, "hour": 2.1, "temp_f": 76.027}, {"site": 4, "hour": 2.35, "temp_f": 75.806}, {"site": 4, "hour": 2.6, "temp_f": 75.71}, {"site": 4, "hour": 2.85, "temp_f": 75.482}, {"site": 4, "hour": 3.1, "temp_f": 75.348}, {"site": 4, "hour": 3.35, "temp_f": 75.189}, {"site": 4, "hour": 3.6, "temp_f": 74.982}, {"site": 4, "hour": 3.85, "temp_f": 74.857}, {"site": 4, "hour": 4.1, "temp_f": 74.696}, {"site": 4, "hour": 4.35, "temp_f": 74.45}, {"site": 4, "hour": 4.6, "temp_f": 74.304}, {"site": 4, "hour": 4.85, "temp_f": 74.293}, {"site": 4, "hour": 5.1, "temp_f": 74.18}, {"site": 4, "hour": 5.35, "temp_f": 74.01}, {"site": 4, "hour": 5.6, "temp_f": 73.814}, {"site": 4, "hour": 5.85, "temp_f": 73.648}, {"site": 4, "hour": 6.1, "temp_f": 73.6}, {"site": 4, "hour": 6.35, "temp_f": 73.49}, {"site": 4, "hour": 6.6, "temp_f": 73.428}, {"site": 4, "hour": 6.85, "temp_f": 73.359}, {"site": 4, "hour": 7.1, "temp_f": 73.579}, {"site": 4, "hour": 7.35, "temp_f": 74.306}, {"site": 4, "hour": 7.6, "temp_f": 75.06}, {"site": 4, "hour": 7.85, "temp_f": 76.188}, {"site": 4, "hour": 8.1, "temp_f": 76.999}, {"site": 4, "hour": 8.35, "temp_f": 77.989}, {"site": 4, "hour": 8.6, "temp_f": 78.742}, {"site": 4, "hour": 8.85, "temp_f": 79.704}, {"site": 4, "hour": 9.1, "temp_f": 80.691}, {"site": 4, "hour": 9.35, "temp_f": 81.376}, {"site": 4, "hour": 9.6, "temp_f": 82.18}, {"site": 4, "hour": 9.85, "temp_f": 82.825}, {"site": 4, "hour": 10.1, "temp_f": 83.469}, {"site": 4, "hour": 10.35, "temp_f": 84.235}, {"site": 4, "hour": 10.6, "temp_f": 84.738}, {"site": 4, "hour": 10.85, "temp_f": 85.425}, {"site": 4, "hour": 11.1, "temp_f": 86.014}, {"site": 4, "hour": 11.35, "temp_f": 86.563}, {"site": 4, "hour": 11.6, "temp_f": 86.97}, {"site": 4, "hour": 11.85, "temp_f": 87.368}, {"site": 4, "hour": 12.1, "temp_f": 87.764}, {"site": 4, "hour": 12.35, "temp_f": 88.408}, {"site": 4, "hour": 12.6, "temp_f": 88.384}, {"site": 4, "hour": 12.85, "temp_f": 88.608}, {"site": 4, "hour": 13.1, "temp_f": 88.87}, {"site": 4, "hour": 13.35, "temp_f": 89.134}, {"site": 4, "hour": 13.6, "temp_f": 89.338}, {"site": 4, "hour": 13.85, "temp_f": 89.763}, {"site": 4, "hour": 14.1, "temp_f": 89.696}, {"site": 4, "hour": 14.35, "temp_f": 89.758}, {"site": 4, "hour": 14.6, "temp_f": 89.899}, {"site": 4, "hour": 14.85, "temp_f": 89.814}, {"site": 4, "hour": 15.1, "temp_f": 89.753}, {"site": 4, "hour": 15.35, "temp_f": 90.13}, {"site": 4, "hour": 15.6, "temp_f": 90.255}, {"site": 4, "hour": 15.85, "temp_f": 90.216}, {"site": 4, "hour": 16.1, "temp_f": 89.921}, {"site": 4, "hour": 16.35, "temp_f": 89.872}, {"site": 4, "hour": 16.6, "temp_f": 90.046}, {"site": 4, "hour": 16.85, "temp_f": 90.113}, {"site": 4, "hour": 17.1, "temp_f": 90.071}, {"site": 4, "hour": 17.35, "temp_f": 89.75}, {"site": 4, "hour": 17.6, "temp_f": 89.194}, {"site": 4, "hour": 17.85, "temp_f": 88.848}, {"site": 4, "hour": 18.1, "temp_f": 88.431}, {"site": 4, "hour": 18.35, "temp_f": 87.781}, {"site": 4, "hour": 18.6, "temp_f": 87.249}, {"site": 4, "hour": 18.85, "temp_f": 86.738}, {"site": 4, "hour": 19.1, "temp_f": 86.183}, {"site": 4, "hour": 19.35, "temp_f": 85.517}, {"site": 4, "hour": 19.6, "temp_f": 84.888}, {"site": 4, "hour": 19.85, "temp_f": 84.361}, {"site": 4, "hour": 20.1, "temp_f": 83.816}, {"site": 4, "hour": 20.35, "temp_f": 83.192}, {"site": 4, "hour": 20.6, "temp_f": 82.69}, {"site": 4, "hour": 20.85, "temp_f": 82.224}, {"site": 4, "hour": 21.1, "temp_f": 81.665}, {"site": 4, "hour": 21.35, "temp_f": 81.211}, {"site": 4, "hour": 21.6, "temp_f": 80.815}, {"site": 4, "hour": 21.85, "temp_f": 80.306}, {"site": 4, "hour": 22.1, "temp_f": 79.955}, {"site": 4, "hour": 22.35, "temp_f": 79.628}, {"site": 4, "hour": 22.6, "temp_f": 79.262}, {"site": 4, "hour": 22.85, "temp_f": 78.828}, {"site": 4, "hour": 23.1, "temp_f": 78.6}, {"site": 4, "hour": 23.35, "temp_f": 78.309}, {"site": 4, "hour": 23.6, "temp_f": 78.159}, {"site": 4, "hour": 23.85, "temp_f": 77.948}], "diurnal_window": "Aug 16, 2025 \u2013 Sep 18, 2025", "exposure": [{"site": 1, "ge_85": 273.25, "ge_90": 141.25, "ge_95": 24.5}, {"site": 2, "ge_85": 266.5, "ge_90": 129.0, "ge_95": 17.5}, {"site": 3, "ge_85": 289.0, "ge_90": 156.5, "ge_95": 29.5}, {"site": 4, "ge_85": 303.5, "ge_90": 159.0, "ge_95": 28.5}], "hobo_daily": [{"date": "2025-08-15", "site": 1, "temp_f": 86.59, "rh": 70.21}, {"date": "2025-08-15", "site": 2, "temp_f": 86.43, "rh": 68.64}, {"date": "2025-08-15", "site": 3, "temp_f": 87.72, "rh": 70.36}, {"date": "2025-08-15", "site": 4, "temp_f": 87.7, "rh": 70.84}, {"date": "2025-08-16", "site": 1, "temp_f": 84.95, "rh": 72.35}, {"date": "2025-08-16", "site": 2, "temp_f": 84.54, "rh": 70.88}, {"date": "2025-08-16", "site": 3, "temp_f": 85.73, "rh": 72.91}, {"date": "2025-08-16", "site": 4, "temp_f": 86.58, "rh": 70.9}, {"date": "2025-08-17", "site": 1, "temp_f": 88.03, "rh": 66.04}, {"date": "2025-08-17", "site": 2, "temp_f": 87.29, "rh": 65.33}, {"date": "2025-08-17", "site": 3, "temp_f": 88.53, "rh": 66.7}, {"date": "2025-08-17", "site": 4, "temp_f": 89.6, "rh": 64.66}, {"date": "2025-08-18", "site": 1, "temp_f": 86.56, "rh": 67.51}, {"date": "2025-08-18", "site": 2, "temp_f": 85.78, "rh": 66.62}, {"date": "2025-08-18", "site": 3, "temp_f": 87.21, "rh": 67.95}, {"date": "2025-08-18", "site": 4, "temp_f": 88.13, "rh": 66.12}, {"date": "2025-08-19", "site": 1, "temp_f": 86.34, "rh": 67.22}, {"date": "2025-08-19", "site": 2, "temp_f": 85.61, "rh": 66.39}, {"date": "2025-08-19", "site": 3, "temp_f": 86.58, "rh": 68.49}, {"date": "2025-08-19", "site": 4, "temp_f": 87.6, "rh": 66.5}, {"date": "2025-08-20", "site": 1, "temp_f": 81.51, "rh": 77.14}, {"date": "2025-08-20", "site": 2, "temp_f": 80.81, "rh": 76.29}, {"date": "2025-08-20", "site": 3, "temp_f": 82.24, "rh": 78.46}, {"date": "2025-08-20", "site": 4, "temp_f": 83.03, "rh": 76.54}, {"date": "2025-08-21", "site": 1, "temp_f": 81.06, "rh": 77.19}, {"date": "2025-08-21", "site": 2, "temp_f": 80.53, "rh": 76.37}, {"date": "2025-08-21", "site": 3, "temp_f": 81.72, "rh": 78.57}, {"date": "2025-08-21", "site": 4, "temp_f": 82.56, "rh": 76.41}, {"date": "2025-08-22", "site": 1, "temp_f": 83.85, "rh": 63.61}, {"date": "2025-08-22", "site": 2, "temp_f": 83.46, "rh": 62.18}, {"date": "2025-08-22", "site": 3, "temp_f": 84.65, "rh": 63.66}, {"date": "2025-08-22", "site": 4, "temp_f": 85.42, "rh": 62.06}, {"date": "2025-08-23", "site": 1, "temp_f": 82.93, "rh": 61.92}, {"date": "2025-08-23", "site": 2, "temp_f": 82.36, "rh": 60.96}, {"date": "2025-08-23", "site": 3, "temp_f": 83.49, "rh": 62.33}, {"date": "2025-08-23", "site": 4, "temp_f": 84.5, "rh": 60.32}, {"date": "2025-08-24", "site": 1, "temp_f": 82.6, "rh": 61.73}, {"date": "2025-08-24", "site": 2, "temp_f": 81.87, "rh": 60.85}, {"date": "2025-08-24", "site": 3, "temp_f": 83.0, "rh": 62.17}, {"date": "2025-08-24", "site": 4, "temp_f": 84.01, "rh": 60.41}, {"date": "2025-08-25", "site": 1, "temp_f": 82.63, "rh": 51.63}, {"date": "2025-08-25", "site": 2, "temp_f": 82.04, "rh": 50.27}, {"date": "2025-08-25", "site": 3, "temp_f": 83.3, "rh": 50.39}, {"date": "2025-08-25", "site": 4, "temp_f": 83.77, "rh": 50.71}, {"date": "2025-08-26", "site": 1, "temp_f": 79.33, "rh": 56.34}, {"date": "2025-08-26", "site": 2, "temp_f": 78.63, "rh": 54.85}, {"date": "2025-08-26", "site": 3, "temp_f": 80.05, "rh": 54.92}, {"date": "2025-08-26", "site": 4, "temp_f": 80.25, "rh": 55.92}, {"date": "2025-08-27", "site": 1, "temp_f": 79.91, "rh": 57.68}, {"date": "2025-08-27", "site": 2, "temp_f": 79.47, "rh": 55.92}, {"date": "2025-08-27", "site": 3, "temp_f": 80.73, "rh": 56.27}, {"date": "2025-08-27", "site": 4, "temp_f": 81.03, "rh": 57.05}, {"date": "2025-08-28", "site": 1, "temp_f": 73.19, "rh": 74.13}, {"date": "2025-08-28", "site": 2, "temp_f": 72.51, "rh": 72.86}, {"date": "2025-08-28", "site": 3, "temp_f": 73.9, "rh": 73.64}, {"date": "2025-08-28", "site": 4, "temp_f": 74.31, "rh": 74.3}, {"date": "2025-08-29", "site": 1, "temp_f": 70.44, "rh": 91.64}, {"date": "2025-08-29", "site": 2, "temp_f": 69.67, "rh": 90.77}, {"date": "2025-08-29", "site": 3, "temp_f": 71.17, "rh": 91.89}, {"date": "2025-08-29", "site": 4, "temp_f": 71.55, "rh": 91.82}, {"date": "2025-08-30", "site": 1, "temp_f": 76.12, "rh": 80.05}, {"date": "2025-08-30", "site": 2, "temp_f": 75.31, "rh": 78.84}, {"date": "2025-08-30", "site": 3, "temp_f": 76.41, "rh": 80.87}, {"date": "2025-08-30", "site": 4, "temp_f": 77.19, "rh": 79.36}, {"date": "2025-08-31", "site": 1, "temp_f": 79.61, "rh": 69.71}, {"date": "2025-08-31", "site": 2, "temp_f": 78.97, "rh": 68.57}, {"date": "2025-08-31", "site": 3, "temp_f": 79.76, "rh": 70.43}, {"date": "2025-08-31", "site": 4, "temp_f": 80.91, "rh": 68.4}, {"date": "2025-09-01", "site": 1, "temp_f": 80.85, "rh": 65.76}, {"date": "2025-09-01", "site": 2, "temp_f": 80.22, "rh": 64.63}, {"date": "2025-09-01", "site": 3, "temp_f": 81.31, "rh": 65.79}, {"date": "2025-09-01", "site": 4, "temp_f": 82.04, "rh": 64.66}, {"date": "2025-09-02", "site": 1, "temp_f": 79.75, "rh": 69.06}, {"date": "2025-09-02", "site": 2, "temp_f": 79.04, "rh": 67.89}, {"date": "2025-09-02", "site": 3, "temp_f": 80.27, "rh": 69.18}, {"date": "2025-09-02", "site": 4, "temp_f": 81.01, "rh": 68.46}, {"date": "2025-09-03", "site": 1, "temp_f": 79.11, "rh": 71.73}, {"date": "2025-09-03", "site": 2, "temp_f": 78.46, "rh": 70.59}, {"date": "2025-09-03", "site": 3, "temp_f": 80.18, "rh": 70.84}, {"date": "2025-09-03", "site": 4, "temp_f": 80.52, "rh": 70.9}, {"date": "2025-09-04", "site": 1, "temp_f": 82.11, "rh": 68.87}, {"date": "2025-09-04", "site": 2, "temp_f": 81.47, "rh": 68.18}, {"date": "2025-09-04", "site": 3, "temp_f": 82.84, "rh": 68.94}, {"date": "2025-09-04", "site": 4, "temp_f": 83.21, "rh": 68.5}, {"date": "2025-09-05", "site": 1, "temp_f": 82.9, "rh": 72.82}, {"date": "2025-09-05", "site": 2, "temp_f": 82.03, "rh": 72.37}, {"date": "2025-09-05", "site": 3, "temp_f": 83.33, "rh": 73.55}, {"date": "2025-09-05", "site": 4, "temp_f": 84.02, "rh": 72.58}, {"date": "2025-09-06", "site": 1, "temp_f": 77.84, "rh": 73.53}, {"date": "2025-09-06", "site": 2, "temp_f": 77.1, "rh": 72.57}, {"date": "2025-09-06", "site": 3, "temp_f": 78.4, "rh": 73.63}, {"date": "2025-09-06", "site": 4, "temp_f": 78.93, "rh": 73.38}, {"date": "2025-09-07", "site": 1, "temp_f": 73.63, "rh": 61.9}, {"date": "2025-09-07", "site": 2, "temp_f": 72.91, "rh": 60.66}, {"date": "2025-09-07", "site": 3, "temp_f": 73.97, "rh": 61.82}, {"date": "2025-09-07", "site": 4, "temp_f": 74.38, "rh": 61.74}, {"date": "2025-09-08", "site": 1, "temp_f": 73.38, "rh": 57.01}, {"date": "2025-09-08", "site": 2, "temp_f": 72.54, "rh": 56.38}, {"date": "2025-09-08", "site": 3, "temp_f": 73.42, "rh": 58.38}, {"date": "2025-09-08", "site": 4, "temp_f": 74.48, "rh": 56.23}, {"date": "2025-09-09", "site": 1, "temp_f": 77.35, "rh": 71.21}, {"date": "2025-09-09", "site": 2, "temp_f": 76.76, "rh": 70.11}, {"date": "2025-09-09", "site": 3, "temp_f": 77.92, "rh": 71.56}, {"date": "2025-09-09", "site": 4, "temp_f": 78.61, "rh": 70.78}, {"date": "2025-09-10", "site": 1, "temp_f": 80.93, "rh": 62.5}, {"date": "2025-09-10", "site": 2, "temp_f": 80.42, "rh": 61.08}, {"date": "2025-09-10", "site": 3, "temp_f": 81.52, "rh": 61.99}, {"date": "2025-09-10", "site": 4, "temp_f": 82.15, "rh": 61.55}, {"date": "2025-09-11", "site": 1, "temp_f": 81.28, "rh": 62.13}, {"date": "2025-09-11", "site": 2, "temp_f": 80.46, "rh": 61.58}, {"date": "2025-09-11", "site": 3, "temp_f": 81.33, "rh": 63.17}, {"date": "2025-09-11", "site": 4, "temp_f": 82.46, "rh": 61.25}, {"date": "2025-09-12", "site": 1, "temp_f": 82.92, "rh": 62.43}, {"date": "2025-09-12", "site": 2, "temp_f": 82.22, "rh": 61.86}, {"date": "2025-09-12", "site": 3, "temp_f": 83.21, "rh": 63.66}, {"date": "2025-09-12", "site": 4, "temp_f": 84.34, "rh": 61.19}, {"date": "2025-09-13", "site": 1, "temp_f": 82.24, "rh": 57.26}, {"date": "2025-09-13", "site": 2, "temp_f": 81.33, "rh": 57.09}, {"date": "2025-09-13", "site": 3, "temp_f": 81.99, "rh": 59.18}, {"date": "2025-09-13", "site": 4, "temp_f": 83.5, "rh": 56.07}, {"date": "2025-09-14", "site": 1, "temp_f": 80.62, "rh": 58.87}, {"date": "2025-09-14", "site": 2, "temp_f": 79.67, "rh": 58.69}, {"date": "2025-09-14", "site": 3, "temp_f": 80.6, "rh": 60.67}, {"date": "2025-09-14", "site": 4, "temp_f": 81.95, "rh": 57.68}, {"date": "2025-09-15", "site": 1, "temp_f": 80.99, "rh": 60.05}, {"date": "2025-09-15", "site": 2, "temp_f": 80.05, "rh": 60.17}, {"date": "2025-09-15", "site": 3, "temp_f": 81.32, "rh": 61.88}, {"date": "2025-09-15", "site": 4, "temp_f": 82.8, "rh": 58.53}, {"date": "2025-09-16", "site": 1, "temp_f": 81.66, "rh": 64.51}, {"date": "2025-09-16", "site": 2, "temp_f": 81.14, "rh": 63.48}, {"date": "2025-09-16", "site": 3, "temp_f": 82.43, "rh": 65.02}, {"date": "2025-09-16", "site": 4, "temp_f": 83.08, "rh": 64.0}, {"date": "2025-09-17", "site": 1, "temp_f": 80.62, "rh": 67.6}, {"date": "2025-09-17", "site": 2, "temp_f": 79.89, "rh": 66.76}, {"date": "2025-09-17", "site": 3, "temp_f": 81.1, "rh": 67.52}, {"date": "2025-09-17", "site": 4, "temp_f": 81.6, "rh": 67.52}, {"date": "2025-09-18", "site": 1, "temp_f": 81.86, "rh": 61.69}, {"date": "2025-09-18", "site": 2, "temp_f": 81.2, "rh": 61.08}, {"date": "2025-09-18", "site": 3, "temp_f": 82.38, "rh": 61.89}, {"date": "2025-09-18", "site": 4, "temp_f": 83.1, "rh": 61.08}, {"date": "2025-09-19", "site": 1, "temp_f": 82.17, "rh": 58.1}, {"date": "2025-09-19", "site": 2, "temp_f": 81.73, "rh": 57.02}, {"date": "2025-09-19", "site": 3, "temp_f": 83.37, "rh": 57.14}, {"date": "2025-09-19", "site": 4, "temp_f": 83.53, "rh": 56.99}], "site_colors": {"1": "#1F6B8E", "2": "#C96A1E", "3": "#3E7E50", "4": "#7B4F9E"}, "feeling_order": ["Slightly Cool", "Cool", "Neutral", "Slightly Warm", "Warm", "Hot", "Very Hot"], "comfort_order": ["Comfortable", "Slightly Uncomfortable", "Uncomfortable", "Very Uncomfortable"]};
+
+// ── Tab management ────────────────────────────────────────────────────────────
+const TABS = ['overview','timeseries','scatter','hobo','rawdata'];
+let initialised = {};
+
+function showTab(name) {
+  // Hide all panels
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'tab-' + name);
+  });
+  // Highlight matching button using data-tab (all buttons have it now)
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', (b.dataset.tab || '') === name);
+  });
+  if (!initialised[name]) {
+    initialised[name] = true;
+    initTab(name);
+  }
+}
+
+function initTab(name) {
+  if (name === 'overview') drawOverview();
+  else if (name === 'timeseries') initTimeseries();
+  else if (name === 'scatter') initScatter();
+  else if (name === 'hobo') initHobo();
+  else if (name === 'rawdata') initRawData();
+  else if (name.startsWith('sv-')) svRenderTab(name);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const SC = DATA.site_colors;
+const SITES = [1,2,3,4];
+const SITE_NAMES = {1:'Site 1', 2:'Site 2', 3:'Site 3', 4:'Site 4'};
+
+const PLOTLY_CONFIG = {displayModeBar: true, responsive: true,
+  modeBarButtonsToRemove: ['select2d','lasso2d','autoScale2d'],
+  toImageButtonOptions: {format:'png', scale:2}};
+
+const BASE_LAYOUT = {
+  paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+  margin:{t:20, r:20, b:50, l:55},
+  font:{family:'-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', size:12, color:'#333'},
+  xaxis:{showgrid:false, linecolor:'#ccc', tickcolor:'#ccc'},
+  yaxis:{gridcolor:'#ebebeb', linecolor:'#ccc', tickcolor:'#ccc', zeroline:false},
+  legend:{bgcolor:'rgba(0,0,0,0)', borderwidth:0},
+  hovermode:'closest',
+};
+
+function mergeLayout(...objs) {
+  return Object.assign({}, BASE_LAYOUT, ...objs);
+}
+
+function fmt1(v) { return v == null ? '—' : (+v).toFixed(1); }
+function fmt2(v) { return v == null ? '—' : (+v).toFixed(2); }
+
+// ── Site chip builder ─────────────────────────────────────────────────────────
+function buildSiteChips(containerId, stateKey, onChange) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  SITES.forEach(s => {
+    const chip = document.createElement('div');
+    chip.className = 'site-chip active';
+    chip.textContent = `Site ${s}`;
+    chip.style.borderColor = SC[s];
+    chip.style.color = SC[s];
+    chip.style.backgroundColor = chip.classList.contains('active') ? SC[s] + '22' : 'transparent';
+    chip.dataset.site = s;
+    chip.onclick = () => {
+      chip.classList.toggle('active');
+      if (chip.classList.contains('active')) {
+        chip.style.backgroundColor = SC[s] + '22';
+      } else {
+        chip.style.backgroundColor = 'transparent';
+      }
+      onChange();
+    };
+    container.appendChild(chip);
+  });
+}
+
+function getActiveSites(containerId) {
+  return Array.from(document.querySelectorAll(`#${containerId} .site-chip.active`))
+    .map(c => +c.dataset.site);
+}
+
+// ── OVERVIEW ─────────────────────────────────────────────────────────────────
+function drawOverview() {
+  const sum = DATA.summary || {};
+  const sumEl = document.getElementById('overview-summary');
+  if (sumEl) {
+    sumEl.innerHTML = `
+      <div class="stat-box"><div class="n">${sum.n_visits ?? '—'}</div><div class="lbl">Site visits</div></div>
+      <div class="stat-box"><div class="n">${sum.n_unique_days ?? '—'}</div><div class="lbl">Unique visit days</div></div>
+      <div class="stat-box"><div class="n" style="font-size:1rem">${sum.first_visit_date || '—'}</div><div class="lbl">First visit</div></div>
+      <div class="stat-box"><div class="n" style="font-size:1rem">${sum.last_visit_date || '—'}</div><div class="lbl">Last visit</div></div>
+    `;
+  }
+
+  // Site cards
+  const cardsEl = document.getElementById('site-cards');
+  cardsEl.innerHTML = '';
+  const avgs = DATA.site_avgs;
+  avgs.forEach(row => {
+    const s = row.site;
+    const div = document.createElement('div');
+    div.className = 'card card-site';
+    div.style.borderTopColor = SC[s];
+    div.innerHTML = `
+      <h3 style="color:${SC[s]}">Site ${s}</h3>
+      <div class="metrics">
+        <div><div class="m-label">Air Temp</div><div class="m-val">${fmt1(row.air_temp_f)}°F</div></div>
+        <div><div class="m-label">WBGT</div><div class="m-val">${fmt1(row.wbgt_f)}°F</div></div>
+        <div><div class="m-label">RH</div><div class="m-val">${fmt1(row.rh_pct)}%</div></div>
+        <div><div class="m-label">Wind</div><div class="m-val">${fmt1(row.wind_mph)} mph</div></div>
+        <div><div class="m-label">Feeling</div><div class="m-val">${fmt1(row.feeling_score)} / 6</div></div>
+        <div><div class="m-label">Comfort</div><div class="m-val">${fmt1(row.comfort_score)} / 4</div></div>
+      </div>`;
+    cardsEl.appendChild(div);
+  });
+
+  // Exposure chart
+  const exp = DATA.exposure;
+  if (exp.length) {
+    const siteLabels = exp.map(r => `Site ${r.site}`);
+    const expTraces = [
+      {name:'≥ 85°F', x: siteLabels, y: exp.map(r=>r.ge_85), type:'bar',
+       marker:{color:'#A8C8E0'}, hovertemplate:'%{x}: %{y:.0f} h<extra>≥85°F</extra>'},
+      {name:'≥ 90°F', x: siteLabels, y: exp.map(r=>r.ge_90), type:'bar',
+       marker:{color:'#4A90BF'}, hovertemplate:'%{x}: %{y:.0f} h<extra>≥90°F</extra>'},
+      {name:'≥ 95°F', x: siteLabels, y: exp.map(r=>r.ge_95), type:'bar',
+       marker:{color:'#1A4F72'}, hovertemplate:'%{x}: %{y:.0f} h<extra>≥95°F</extra>'},
+    ];
+    Plotly.newPlot('exposure-chart', expTraces, mergeLayout({
+      barmode:'group',
+      margin:{t:10,r:10,b:50,l:55},
+      yaxis:{title:{text:'Hours'}},
+      legend:{orientation:'h', y:-0.22},
+    }), PLOTLY_CONFIG);
+  }
+
+  // Mean perception by site (aligned with kestrel_perception_bars_by_site deliverable)
+  const pb = DATA.perception_by_site || [];
+  const xs = pb.map(r => 'Site ' + r.site);
+  if (pb.length) {
+    Plotly.newPlot('ov-perc-feel-bar', [{
+      type: 'bar',
+      x: xs,
+      y: pb.map(r => r.feeling_mean),
+      marker: { color: pb.map(r => SC[r.site]) },
+      error_y: { type: 'data', array: pb.map(r => r.feeling_sem), visible: true, thickness: 1.2, width: 5 },
+      hovertemplate: '%{x}<br>Mean feeling: %{y:.2f} ± %{error_y.array:.2f}<extra></extra>',
+    }], mergeLayout({
+      margin: { t: 8, r: 12, b: 40, l: 48 },
+      yaxis: { title: { text: 'Mean feeling (1–6)' }, range: [0, 6.8], dtick: 1 },
+      showlegend: false,
+    }), PLOTLY_CONFIG);
+    Plotly.newPlot('ov-perc-comf-bar', [{
+      type: 'bar',
+      x: xs,
+      y: pb.map(r => r.comfort_mean),
+      marker: { color: pb.map(r => SC[r.site]) },
+      error_y: { type: 'data', array: pb.map(r => r.comfort_sem), visible: true, thickness: 1.2, width: 5 },
+      hovertemplate: '%{x}<br>Mean comfort: %{y:.2f} ± %{error_y.array:.2f}<extra></extra>',
+    }], mergeLayout({
+      margin: { t: 8, r: 12, b: 40, l: 48 },
+      yaxis: { title: { text: 'Mean comfort (1–4)' }, range: [0, 4.5], dtick: 1 },
+      showlegend: false,
+    }), PLOTLY_CONFIG);
+  }
+
+  buildSiteChips('ov-daily-site-toggle', 'ov', drawDailyOverviewChart);
+  drawDailyOverviewChart();
+
+  initialised['overview'] = true;
+}
+
+function _mean(a) { return a.length ? a.reduce((x, y) => x + y, 0) / a.length : null; }
+function _semArr(a) {
+  if (a.length <= 1) return 0;
+  const m = _mean(a);
+  return Math.sqrt(a.reduce((s, x) => s + (x - m) * (x - m), 0) / (a.length * (a.length - 1)));
+}
+
+function drawDailyOverviewChart() {
+  const active = getActiveSites('ov-daily-site-toggle');
+  const visits = DATA.visits || [];
+  const byDate = {};
+  visits.forEach(r => {
+    if (!active.includes(r.site)) return;
+    const d = r.visit_date;
+    if (!d) return;
+    if (!byDate[d]) byDate[d] = { feel: [], comf: [] };
+    if (r.feeling_score != null) byDate[d].feel.push(r.feeling_score);
+    if (r.comfort_score != null) byDate[d].comf.push(r.comfort_score);
+  });
+  const dates = Object.keys(byDate).sort();
+  if (!dates.length) {
+    Plotly.newPlot('daily-chart', [], mergeLayout({
+      margin: { t: 40, r: 20, b: 50, l: 55 },
+      annotations: [{ text: 'Select at least one site with visits', showarrow: false, x: 0.5, y: 0.5, xref: 'paper', yref: 'paper' }],
+    }), PLOTLY_CONFIG);
+    return;
+  }
+  const feeling_mean = dates.map(d => _mean(byDate[d].feel));
+  const feeling_sem = dates.map(d => _semArr(byDate[d].feel));
+  const comfort_mean = dates.map(d => _mean(byDate[d].comf));
+  const comfort_sem = dates.map(d => _semArr(byDate[d].comf));
+  const nVis = dates.map(d => byDate[d].feel.length);
+
+  const feelTrace = {
+    name: 'Feeling score',
+    x: dates,
+    y: feeling_mean.map((v, i) => (v == null ? null : v)),
+    error_y: { type: 'data', array: feeling_sem, visible: true, color: '#1F6B8E44', thickness: 1.5, width: 4 },
+    mode: 'lines+markers',
+    line: { color: '#1F6B8E', width: 2 },
+    marker: { size: 6, color: '#1F6B8E' },
+    hovertemplate: '%{x}<br>Feeling: %{y:.2f} ± %{error_y.array:.2f}<extra></extra>',
+  };
+  const comfTrace = {
+    name: 'Comfort score',
+    x: dates,
+    y: comfort_mean.map((v) => (v == null ? null : v)),
+    error_y: { type: 'data', array: comfort_sem, visible: true, color: '#C96A1E44', thickness: 1.5, width: 4 },
+    mode: 'lines+markers',
+    line: { color: '#C96A1E', width: 2, dash: 'dot' },
+    marker: { size: 6, color: '#C96A1E' },
+    hovertemplate: '%{x}<br>Comfort: %{y:.2f} ± %{error_y.array:.2f}<extra></extra>',
+    yaxis: 'y2',
+  };
+  const nTrace = {
+    name: '# visits (in selection)',
+    x: dates,
+    y: nVis,
+    type: 'bar',
+    marker: { color: '#e0e7ef' },
+    yaxis: 'y3',
+    showlegend: true,
+    hovertemplate: '%{x}: %{y} visits<extra></extra>',
+  };
+  Plotly.newPlot('daily-chart', [nTrace, feelTrace, comfTrace], mergeLayout({
+    margin: { t: 10, r: 60, b: 60, l: 55 },
+    xaxis: { title: { text: 'Visit date' } },
+    yaxis: { title: { text: 'Feeling (1–6)' }, range: [0, 7] },
+    yaxis2: { title: { text: 'Comfort (1–4)' }, overlaying: 'y', side: 'right', range: [0, 5], showgrid: false },
+    yaxis3: { title: { text: 'Visits' }, overlaying: 'y', side: 'right', range: [0, 30], showgrid: false, visible: false },
+    legend: { orientation: 'h', y: -0.22 },
+    hovermode: 'x unified',
+  }), PLOTLY_CONFIG);
+}
+
+// ── TIMESERIES ────────────────────────────────────────────────────────────────
+function drawTimeseriesTab() {
+  drawEstVsMeasured();
+  drawTimeseries();
+  drawDiurnal();
+}
+
+function initTimeseries() {
+  const dw = document.getElementById('ts-diurnal-window');
+  if (dw) {
+    dw.textContent = (DATA.diurnal_window)
+      ? ('Window: ' + DATA.diurnal_window + ' (CDT) · mean by clock time')
+      : '';
+  }
+  buildSiteChips('ts-site-toggle', 'ts', drawTimeseriesTab);
+  drawTimeseriesTab();
+}
+
+function drawEstVsMeasured() {
+  const active = getActiveSites('ts-site-toggle');
+  const raw = DATA.est_vs_measured || [];
+  const rows = raw.filter(r => active.includes(r.site));
+  const traces = [];
+  SITES.filter(s => active.includes(s)).forEach(s => {
+    const pts = rows.filter(r => r.site === s);
+    traces.push({
+      name: 'Site ' + s,
+      x: pts.map(r => r.est_temp_f),
+      y: pts.map(r => r.air_temp_f),
+      mode: 'markers',
+      marker: { color: SC[s], size: 7.5, opacity: 0.88, line: { width: 0.5, color: 'white' } },
+      hovertemplate: 'Site ' + s + '<br>Estimated: %{x:.1f}°F<br>Kestrel: %{y:.1f}°F<extra></extra>',
+    });
+  });
+  let lo = 70, hi = 105;
+  const vals = rows.flatMap(r => [r.est_temp_f, r.air_temp_f]).filter(v => v != null);
+  if (vals.length) {
+    lo = Math.min(...vals) - 2;
+    hi = Math.max(...vals) + 2;
+  }
+  traces.push({
+    type: 'scatter',
+    x: [lo, hi],
+    y: [lo, hi],
+    mode: 'lines',
+    line: { color: '#555555', dash: 'dash', width: 1.35 },
+    name: 'y = x (perfect match)',
+    hoverinfo: 'skip',
+  });
+  Plotly.newPlot('ts-est-chart', traces, mergeLayout({
+    margin: { t: 6, r: 14, b: 44, l: 48 },
+    xaxis: { title: { text: 'Estimated (°F)', standoff: 6 }, scaleanchor: 'y', scaleratio: 1, constrain: 'domain', tickfont: { size: 10 } },
+    yaxis: { title: { text: 'Kestrel (°F)', standoff: 4 }, tickfont: { size: 10 } },
+    legend: { orientation: 'h', y: -0.16, yanchor: 'top', font: { size: 10 } },
+    hovermode: 'closest',
+  }), PLOTLY_CONFIG);
+}
+
+function drawDiurnal() {
+  const active = getActiveSites('ts-site-toggle');
+  const hd = DATA.hobo_diurnal || [];
+  const traces = SITES.filter(s => active.includes(s)).map(s => {
+    const rows = hd.filter(r => r.site === s).sort((a, b) => a.hour - b.hour);
+    return {
+      name: 'Site ' + s,
+      x: rows.map(r => r.hour),
+      y: rows.map(r => r.temp_f),
+      mode: 'lines',
+      line: { color: SC[s], width: 2 },
+      hovertemplate: 'Site ' + s + '<br>Hour: %{x:.2f}<br>Mean: %{y:.1f}°F<extra></extra>',
+    };
+  });
+  Plotly.newPlot('ts-diurnal-chart', traces, mergeLayout({
+    margin: { t: 6, r: 14, b: 48, l: 48 },
+    xaxis: { title: { text: 'Hour of day (CDT)' }, range: [0, 24], dtick: 3, tickfont: { size: 10 } },
+    yaxis: { title: { text: 'Mean temp (°F)' }, rangemode: 'normal', tickfont: { size: 10 } },
+    legend: { orientation: 'h', y: -0.18, yanchor: 'top', font: { size: 10 } },
+    hovermode: 'x unified',
+  }), PLOTLY_CONFIG);
+}
+
+function drawTimeseries() {
+  const active = getActiveSites('ts-site-toggle');
+  const sd = DATA.site_daily;
+
+  function makeSiteTraces(scoreKey) {
+    return SITES.filter(s=>active.includes(s)).map(s => {
+      const rows = sd.filter(r=>r.site===s).sort((a,b)=>a.visit_date.localeCompare(b.visit_date));
+      return {
+        name: `Site ${s}`,
+        x: rows.map(r=>r.visit_date),
+        y: rows.map(r=>r[scoreKey]),
+        mode:'lines+markers',
+        line:{color:SC[s], width:2},
+        marker:{size:6, color:SC[s]},
+        hovertemplate:`Site ${s}<br>%{x}: %{y:.2f}<extra></extra>`,
+      };
+    });
+  }
+
+  const feelLayout = mergeLayout({
+    margin:{t:6,r:12,b:44,l:48},
+    yaxis:{title:{text:'Score (1–6)'}, range:[0.5,6.5], dtick:1, tickfont:{size:10}},
+    xaxis:{title:{text:'Visit date'}, tickfont:{size:10}},
+    legend:{orientation:'h', y:-0.18, yanchor:'top', font:{size:10}},
+    hovermode:'x unified',
+  });
+  const comfLayout = mergeLayout({
+    margin:{t:6,r:12,b:44,l:48},
+    yaxis:{title:{text:'Score (1–4)'}, range:[0.5,4.5], dtick:1, tickfont:{size:10}},
+    xaxis:{title:{text:'Visit date'}, tickfont:{size:10}},
+    legend:{orientation:'h', y:-0.18, yanchor:'top', font:{size:10}},
+    hovermode:'x unified',
+  });
+
+  Plotly.newPlot('ts-feeling-chart', makeSiteTraces('feeling'), feelLayout, PLOTLY_CONFIG);
+  Plotly.newPlot('ts-comfort-chart', makeSiteTraces('comfort'), comfLayout, PLOTLY_CONFIG);
+}
+
+// ── SCATTER ───────────────────────────────────────────────────────────────────
+const X_LABELS = {
+  air_temp_f: 'Kestrel air temperature (°F)',
+  wbgt_f: 'WBGT (°F)',
+  rh_pct: 'RH (%)',
+  wind_mph: 'Wind speed (mph)',
+  est_temp_f: 'Estimated temperature (°F)',
+};
+const Y_LABELS = {feeling_score:'Feeling Score (1–6)', comfort_score:'Comfort Score (1–4)'};
+
+function initScatter() {
+  buildSiteChips('scatter-site-toggle', 'scatter', drawScatter);
+  drawScatter();
+}
+
+function drawScatter() {
+  const xCol = document.getElementById('scatter-x').value;
+  const yCol = document.getElementById('scatter-y').value;
+  const active = getActiveSites('scatter-site-toggle');
+  const visits = DATA.visits.filter(r => r[xCol] != null && r[yCol] != null);
+
+  const traces = SITES.filter(s=>active.includes(s)).map(s => {
+    const rows = visits.filter(r=>r.site===s);
+    return {
+      name:`Site ${s}`,
+      x: rows.map(r=>r[xCol]),
+      y: rows.map(r=>r[yCol]),
+      mode:'markers',
+      marker:{color:SC[s], size:8, opacity:0.8, line:{width:0.5, color:'white'}},
+      hovertemplate:`Site ${s}<br>${X_LABELS[xCol]}: %{x:.1f}<br>${Y_LABELS[yCol]}: %{y}<extra></extra>`,
+    };
+  });
+
+  Plotly.newPlot('scatter-chart', traces, mergeLayout({
+    margin:{t:20,r:20,b:60,l:60},
+    xaxis:{title:{text:X_LABELS[xCol]}},
+    yaxis:{title:{text:Y_LABELS[yCol]}, dtick:1},
+    legend:{orientation:'h', y:-0.2},
+  }), PLOTLY_CONFIG);
+}
+
+// ── HOBO ─────────────────────────────────────────────────────────────────────
+function initHobo() {
+  buildSiteChips('hobo-site-toggle', 'hobo', drawHobo);
+  drawHobo();
+}
+
+function drawHobo() {
+  const active = getActiveSites('hobo-site-toggle');
+  const hd = DATA.hobo_daily;
+
+  function makeTrace(s, yKey, yLabel) {
+    const rows = hd.filter(r=>r.site===s).sort((a,b)=>a.date.localeCompare(b.date));
+    return {
+      name:`Site ${s}`,
+      x:rows.map(r=>r.date),
+      y:rows.map(r=>r[yKey]),
+      mode:'lines',
+      line:{color:SC[s], width:1.8},
+      hovertemplate:`Site ${s}<br>%{x}: %{y:.1f}${yLabel}<extra></extra>`,
+    };
+  }
+
+  const tempTraces = SITES.filter(s=>active.includes(s)).map(s=>makeTrace(s,'temp_f','°F'));
+  const rhTraces   = SITES.filter(s=>active.includes(s)).map(s=>makeTrace(s,'rh','%'));
+
+  const hoboLegend = {orientation:'h', x:0.5, xanchor:'center', y:-0.2, yanchor:'top'};
+  Plotly.newPlot('hobo-temp-chart', tempTraces, mergeLayout({
+    margin:{t:10,r:20,b:90,l:55},
+    xaxis:{title:{text:'Date'}},
+    yaxis:{title:{text:'Temperature (°F)'}, rangemode:'normal'},
+    legend:hoboLegend,
+    hovermode:'x unified',
+  }), PLOTLY_CONFIG);
+
+  Plotly.newPlot('hobo-rh-chart', rhTraces, mergeLayout({
+    margin:{t:10,r:20,b:90,l:55},
+    xaxis:{title:{text:'Date'}},
+    yaxis:{title:{text:'Relative Humidity (%)'}, rangemode:'normal'},
+    legend:hoboLegend,
+    hovermode:'x unified',
+  }), PLOTLY_CONFIG);
+}
+
+// ── RAW DATA ──────────────────────────────────────────────────────────────────
+let rawSortCol = 'visit_date';
+let rawSortDir = 1;
+let rawFiltered = [];
+
+function initRawData() {
+  // Populate filter dropdowns
+  const feelSel = document.getElementById('raw-feeling');
+  DATA.feeling_order.forEach(f => {
+    const o = document.createElement('option');
+    o.value = f; o.textContent = f;
+    feelSel.appendChild(o);
+  });
+  const comfSel = document.getElementById('raw-comfort');
+  DATA.comfort_order.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    comfSel.appendChild(o);
+  });
+  filterTable();
+}
+
+function feelClass(label) {
+  if (!label) return '';
+  const l = label.toLowerCase();
+  if (l.includes('very hot')) return 'pill feel-very-hot';
+  if (l.includes('hot')) return 'pill feel-hot';
+  if (l.includes('warm')) return 'pill feel-warm';
+  if (l.includes('neutral')) return 'pill feel-neutral';
+  if (l.includes('cool')) return 'pill feel-cool';
+  return 'pill';
+}
+function comfClass(label) {
+  if (!label) return '';
+  const l = label.toLowerCase();
+  if (l.includes('very uncomf')) return 'pill comf-very';
+  if (l.includes('uncomfortable')) return 'pill comf-uncomf';
+  if (l.includes('slightly')) return 'pill comf-slight';
+  if (l.includes('comfort')) return 'pill comf-ok';
+  return 'pill';
+}
+function siteBadge(s) {
+  return `<span class="pill badge-${s}">Site ${s}</span>`;
+}
+
+function filterTable() {
+  const search = (document.getElementById('raw-search').value || '').toLowerCase();
+  const site   = document.getElementById('raw-site').value;
+  const feel   = document.getElementById('raw-feeling').value;
+  const comf   = document.getElementById('raw-comfort').value;
+
+  rawFiltered = DATA.visits.filter(r => {
+    if (site && String(r.site) !== site) return false;
+    if (feel && r.feeling_label !== feel) return false;
+    if (comf && r.comfort_label !== comf) return false;
+    if (search) {
+      const haystack = [r.visit_date, `Site ${r.site}`, r.period_key,
+        r.feeling_label, r.comfort_label, String(r.est_temp_f ?? '')].join(' ').toLowerCase();
+      if (!haystack.includes(search)) return false;
+    }
+    return true;
+  });
+
+  sortAndRender();
+}
+
+function sortTable(col) {
+  if (rawSortCol === col) rawSortDir *= -1;
+  else { rawSortCol = col; rawSortDir = 1; }
+  document.querySelectorAll('#raw-table th').forEach(th => {
+    th.classList.remove('sort-asc','sort-desc');
+  });
+  const cols = ['site','visit_date','period_key','feeling_label','feeling_score',
+                'comfort_label','comfort_score','est_temp_f','air_temp_f','wbgt_f','rh_pct','wind_mph'];
+  const idx = cols.indexOf(col);
+  if (idx >= 0) {
+    const th = document.querySelectorAll('#raw-table th')[idx];
+    th.classList.add(rawSortDir === 1 ? 'sort-asc' : 'sort-desc');
+  }
+  sortAndRender();
+}
+
+function sortAndRender() {
+  const col = rawSortCol, dir = rawSortDir;
+  const sorted = [...rawFiltered].sort((a,b) => {
+    const av = a[col], bv = b[col];
+    if (av == null) return 1; if (bv == null) return -1;
+    return (av < bv ? -1 : av > bv ? 1 : 0) * dir;
+  });
+  renderTable(sorted);
+}
+
+function renderTable(rows) {
+  const tbody = document.getElementById('raw-tbody');
+  const n = rows.length;
+  tbody.innerHTML = rows.map(r => `<tr>
+    <td>${siteBadge(r.site)}</td>
+    <td>${r.visit_date || '—'}</td>
+    <td>${r.period_key || '—'}</td>
+    <td><span class="${feelClass(r.feeling_label)}">${r.feeling_label || '—'}</span></td>
+    <td>${r.feeling_score ?? '—'}</td>
+    <td><span class="${comfClass(r.comfort_label)}">${r.comfort_label || '—'}</span></td>
+    <td>${r.comfort_score ?? '—'}</td>
+    <td>${r.est_temp_f != null ? r.est_temp_f.toFixed(1) : '—'}</td>
+    <td>${r.air_temp_f != null ? r.air_temp_f.toFixed(1) : '—'}</td>
+    <td>${r.wbgt_f != null ? r.wbgt_f.toFixed(1) : '—'}</td>
+    <td>${r.rh_pct != null ? r.rh_pct.toFixed(1) : '—'}</td>
+    <td>${r.wind_mph != null ? r.wind_mph.toFixed(1) : '—'}</td>
+  </tr>`).join('');
+
+  document.getElementById('raw-count').textContent =
+    `Showing ${n} of ${DATA.visits.length} records`;
+
+  // Stats
+  const statsEl = document.getElementById('raw-stats');
+  const feelAvg = rows.filter(r=>r.feeling_score!=null).reduce((s,r)=>s+r.feeling_score,0) /
+                  (rows.filter(r=>r.feeling_score!=null).length || 1);
+  const comfAvg = rows.filter(r=>r.comfort_score!=null).reduce((s,r)=>s+r.comfort_score,0) /
+                  (rows.filter(r=>r.comfort_score!=null).length || 1);
+  const tempAvg = rows.filter(r=>r.air_temp_f!=null).reduce((s,r)=>s+r.air_temp_f,0) /
+                  (rows.filter(r=>r.air_temp_f!=null).length || 1);
+  statsEl.innerHTML = `
+    <div class="stat-box"><div class="n">${n}</div><div class="lbl">Records</div></div>
+    <div class="stat-box"><div class="n">${feelAvg.toFixed(1)}</div><div class="lbl">Avg feeling</div></div>
+    <div class="stat-box"><div class="n">${comfAvg.toFixed(1)}</div><div class="lbl">Avg comfort</div></div>
+    <div class="stat-box"><div class="n">${isFinite(tempAvg)?tempAvg.toFixed(1)+'°F':'—'}</div><div class="lbl">Avg air temp</div></div>
+  `;
+}
+
+function exportCSV() {
+  const cols = ['site','visit_date','period_key','feeling_label','feeling_score',
+                'comfort_label','comfort_score','est_temp_f','air_temp_f','wbgt_f','rh_pct','wind_mph'];
+  const header = cols.join(',');
+  const rows = rawFiltered.map(r => cols.map(c => {
+    const v = r[c];
+    return v == null ? '' : (typeof v === 'string' && v.includes(',') ? `"${v}"` : v);
+  }).join(','));
+  const csv = [header, ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'farish_year2_visits.csv';
+  a.click();
+}
+
+
+// ════════════════ SURVEY ════════════════════════════════════════════════════
+const SV_DATA   = {"SocioDem": {"tab_id": "sociodem", "label": "Socio-Demographics", "questions": [{"title": "1. What is your age", "options": ["Under 18", "18-34", "35-59", "60+"], "y1_options": ["Under 18", "18-34", "35-59", "60+"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [0.0, 29.6, 58.0, 12.3], "counts": [0, 48, 94, 20], "n": 162}], "y1_series": [{"label": "Jun 22", "pct": [0.0, 26.9, 57.4, 15.7], "counts": [0, 29, 62, 17], "n": 108}, {"label": "Aug 25", "pct": [0.0, 31.6, 52.6, 15.8], "counts": [0, 6, 10, 3], "n": 19}, {"label": "All festival dates", "pct": [0.0, 27.6, 56.7, 15.7], "counts": [0, 35, 72, 20], "n": 127}]}, {"title": "2. How long have you lived in Jackson?", "options": ["<1 year", "1-5 years", ">5 years", "all my life", "I do not live in Jackson"], "y1_options": ["<1 year", "1-5 years", ">5 years", "all my life", "I do not live in Jackson"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [2.5, 9.9, 29.6, 58.0, 0.0], "counts": [4, 16, 48, 94, 0], "n": 162}], "y1_series": [{"label": "Jun 22", "pct": [0.9, 11.1, 41.7, 46.3, 0.0], "counts": [1, 12, 45, 50, 0], "n": 108}, {"label": "Aug 25", "pct": [0.0, 0.0, 47.4, 52.6, 0.0], "counts": [0, 0, 9, 10, 0], "n": 19}, {"label": "All festival dates", "pct": [0.8, 9.4, 42.5, 47.2, 0.0], "counts": [1, 12, 54, 60, 0], "n": 127}]}, {"title": "3. What is your race/ethnicity?", "options": ["African American/ Black", "American Indian/ Alaska Native", "Asian", "Native Hawaiian/ Pacific Islander", "Hispanic/ Latine", "White", "Other", "No Response"], "y1_options": ["African American/ Black", "American Indian/ Alaska Native", "Asian", "Native Hawaiian/ Pacific Islander", "Hispanic/ Latino", "White", "Other", "No Response"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [95.2, 0.6, 0.0, 0.0, 0.6, 2.4, 0.6, 0.6], "counts": [157, 1, 0, 0, 1, 4, 1, 1], "n": 165}], "y1_series": [{"label": "Jun 22", "pct": [90.7, 0.9, 0.9, 0.0, 0.0, 0.9, 1.9, 4.6], "counts": [98, 1, 1, 0, 0, 1, 2, 5], "n": 108}, {"label": "Aug 25", "pct": [80.0, 5.0, 0.0, 0.0, 0.0, 5.0, 10.0, 0.0], "counts": [16, 1, 0, 0, 0, 1, 2, 0], "n": 20}, {"label": "All festival dates", "pct": [89.1, 1.6, 0.8, 0.0, 0.0, 1.6, 3.1, 3.9], "counts": [114, 2, 1, 0, 0, 2, 4, 5], "n": 128}]}, {"title": "4. What is your yearly household income?", "options": ["$0- $25,000", "$25,000- $45,000", ">$45,000", "I don't know", "No response"], "y1_options": ["$0- $25,000", "$25,000- $45,000", ">$45,000", "I don't know", "No response"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [12.3, 32.1, 48.8, 6.2, 0.6], "counts": [20, 52, 79, 10, 1], "n": 162}], "y1_series": [{"label": "Jun 22", "pct": [16.7, 28.7, 43.5, 7.4, 3.7], "counts": [18, 31, 47, 8, 4], "n": 108}, {"label": "Aug 25", "pct": [0.0, 36.8, 36.8, 15.8, 10.5], "counts": [0, 7, 7, 3, 2], "n": 19}, {"label": "All festival dates", "pct": [14.2, 29.9, 42.5, 8.7, 4.7], "counts": [18, 38, 54, 11, 6], "n": 127}]}]}, "Comfortability": {"tab_id": "comfortability", "label": "Comfort & Heat Impacts", "questions": [{"title": "5. Did you participate in any outdoor events on Farish Street last summer?", "options": ["Yes", "No", "I don't know"], "y1_options": ["Yes", "No", "I don't know"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [59.9, 39.5, 0.6], "counts": [97, 64, 1], "n": 162}], "y1_series": [{"label": "Jun 22", "pct": [59.3, 38.0, 2.8], "counts": [64, 41, 3], "n": 108}, {"label": "Aug 25", "pct": [52.6, 47.4, 0.0], "counts": [10, 9, 0], "n": 19}, {"label": "All festival dates", "pct": [58.3, 39.4, 2.4], "counts": [74, 50, 3], "n": 127}]}, {"title": "6. Were you more, less, or equally comfortable with the heat and humidity on Farish Street last year?", "options": ["Was more comfortable last year", "Was equally comfotable to last year", "Was less comfortable last year", "I don't know", "Blank", "Was more comfortable last year", "Was equally comfotable to last year", "Was less comfortable last year", "I don't know"], "y1_options": ["Was more comfortable last year", "Was equally comfotable to last year", "Was less comfortable last year", "I don't know"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [11.7, 28.9, 16.0, 3.1, 40.0, 0.1, 0.2, 0.1, 0.0], "counts": [19, 47, 26, 5, 65, 0, 0, 0, 0], "n": 163}, {"label": "Year 2 (all respondents)", "pct": [0.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0], "counts": [0, 0, 0, 0, 162, 0, 0, 0, 0], "n": 162}], "y1_series": [{"label": "Jun 22", "pct": [15.6, 45.3, 31.2, 7.8], "counts": [10, 29, 20, 5], "n": 64}, {"label": "Aug 25", "pct": [10.0, 30.0, 60.0, 0.0], "counts": [1, 3, 6, 0], "n": 10}, {"label": "All festival dates", "pct": [14.9, 43.2, 35.1, 6.8], "counts": [11, 32, 26, 5], "n": 74}]}, {"title": "7. Considering the combination of heat and humidity, how does it feel to be outside on Farish Street today?", "options": ["I enjoy the heat and humidity", "The heat and humidity do not bother me", "The heat and humidity make me feel uncomfortable", "The heat and humidity make me feel tired", "The heat and humidity make me feel sick", "The heat and humidity make me feel unsafe", "Other (write-in)"], "y1_options": ["I enjoy the heat and humidity", "The heat and humidity do not bother me", "The heat and humidity make me feel uncomfortable", "The heat and humidity make me feel tired", "The heat and humidity make me feel sick", "The heat and humidity make me feel unsafe", "Other (write-in)"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [17.3, 42.0, 27.2, 24.1, 6.2, 2.5, 1.9], "counts": [28, 68, 44, 39, 10, 4, 3], "n": 196}], "y1_series": [{"label": "Jun 22", "pct": [10.8, 18.9, 25.7, 23.6, 11.5, 6.8, 2.7], "counts": [16, 28, 38, 35, 17, 10, 4], "n": 148}, {"label": "Aug 25", "pct": [8.7, 30.4, 30.4, 21.7, 4.3, 4.3, 0.0], "counts": [2, 7, 7, 5, 1, 1, 0], "n": 23}, {"label": "All festival dates", "pct": [10.5, 20.5, 26.3, 23.4, 10.5, 6.4, 2.3], "counts": [18, 35, 45, 40, 18, 11, 4], "n": 171}]}]}, "Decision Making": {"tab_id": "decision_making", "label": "Decision Making", "questions": [{"title": "More shade", "options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "y1_options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [33.3, 58.6, 5.6, 2.5], "counts": [54, 95, 9, 4], "n": 162}], "y1_series": [{"label": "Jun 22", "pct": [25.9, 52.8, 13.0, 8.3], "counts": [28, 57, 14, 9], "n": 108}, {"label": "Aug 25", "pct": [21.1, 73.7, 0.0, 5.3], "counts": [4, 14, 0, 1], "n": 19}, {"label": "All festival dates", "pct": [25.2, 55.9, 11.0, 7.9], "counts": [32, 71, 14, 10], "n": 127}]}, {"title": "A place to sit down", "options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "y1_options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [29.6, 58.0, 5.6, 6.8], "counts": [48, 94, 9, 11], "n": 162}], "y1_series": [{"label": "Jun 22", "pct": [27.8, 52.8, 15.7, 3.7], "counts": [30, 57, 17, 4], "n": 108}, {"label": "Aug 25", "pct": [21.1, 78.9, 0.0, 0.0], "counts": [4, 15, 0, 0], "n": 19}, {"label": "All festival dates", "pct": [26.8, 56.7, 13.4, 3.1], "counts": [34, 72, 17, 4], "n": 127}]}, {"title": "Outdoor fans", "options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "y1_options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [24.7, 61.7, 9.9, 3.7], "counts": [40, 100, 16, 6], "n": 162}], "y1_series": [{"label": "Jun 22", "pct": [22.2, 51.9, 18.5, 7.4], "counts": [24, 56, 20, 8], "n": 108}, {"label": "Aug 25", "pct": [26.3, 73.7, 0.0, 0.0], "counts": [5, 14, 0, 0], "n": 19}, {"label": "All festival dates", "pct": [22.8, 55.1, 15.7, 6.3], "counts": [29, 70, 20, 8], "n": 127}]}, {"title": "Misters that spray you with cool mist", "options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "y1_options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [27.8, 61.1, 6.2, 4.9], "counts": [45, 99, 10, 8], "n": 162}], "y1_series": [{"label": "Jun 22", "pct": [23.1, 53.7, 17.6, 5.6], "counts": [25, 58, 19, 6], "n": 108}, {"label": "Aug 25", "pct": [26.3, 63.2, 0.0, 10.5], "counts": [5, 12, 0, 2], "n": 19}, {"label": "All festival dates", "pct": [23.6, 55.1, 15.0, 6.3], "counts": [30, 70, 19, 8], "n": 127}]}, {"title": "Indoor space with air conditioning", "options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "y1_options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [22.8, 63.6, 6.2, 7.4], "counts": [37, 103, 10, 12], "n": 162}], "y1_series": [{"label": "Jun 22", "pct": [25.9, 50.9, 13.0, 10.2], "counts": [28, 55, 14, 11], "n": 108}, {"label": "Aug 25", "pct": [21.1, 68.4, 0.0, 10.5], "counts": [4, 13, 0, 2], "n": 19}, {"label": "All festival dates", "pct": [25.2, 53.5, 11.0, 10.2], "counts": [32, 68, 14, 13], "n": 127}]}, {"title": "Free bottled water or other cold drinks", "options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "y1_options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [24.7, 63.6, 8.0, 3.7], "counts": [40, 103, 13, 6], "n": 162}], "y1_series": [{"label": "Jun 22", "pct": [25.0, 50.0, 16.7, 8.3], "counts": [27, 54, 18, 9], "n": 108}, {"label": "Aug 25", "pct": [26.3, 68.4, 0.0, 5.3], "counts": [5, 13, 0, 1], "n": 19}, {"label": "All festival dates", "pct": [25.2, 52.8, 14.2, 7.9], "counts": [32, 67, 18, 10], "n": 127}]}, {"title": "9. Do you ever decide to stay home from outdoor events because it is too hot outside?", "options": ["Yes", "No", "I don't know"], "y1_options": ["Yes", "No", "I don't know"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [61.1, 32.7, 6.2], "counts": [99, 53, 10], "n": 162}], "y1_series": [{"label": "Jun 22", "pct": [74.1, 24.1, 1.9], "counts": [80, 26, 2], "n": 108}, {"label": "Aug 25", "pct": [73.7, 26.3, 0.0], "counts": [14, 5, 0], "n": 19}, {"label": "All festival dates", "pct": [74.0, 24.4, 1.6], "counts": [94, 31, 2], "n": 127}]}]}, "Green Spaces": {"tab_id": "green_spaces", "label": "Green Space Perceptions", "questions": [{"title": "11. Are you more likely to spend time outside in the summer if you have a green space to go to, like a park, garden, or a grassy field?", "options": ["Yes", "No", "I don't know/ neither"], "y1_options": ["Yes", "No", "I don't know/ neither"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [74.7, 13.0, 12.3], "counts": [121, 21, 20], "n": 162}], "y1_series": [{"label": "Jun 22", "pct": [79.6, 8.3, 12.0], "counts": [86, 9, 13], "n": 108}, {"label": "Aug 25", "pct": [84.2, 5.3, 10.5], "counts": [16, 1, 2], "n": 19}, {"label": "All festival dates", "pct": [80.3, 7.9, 11.8], "counts": [102, 10, 15], "n": 127}]}, {"title": "13. Do you prefer parks and green spaces in Jackson with or without trees?", "options": ["With trees", "Without trees", "No preference"], "y1_options": ["With trees", "Without trees", "no preference"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [81.5, 4.3, 14.2], "counts": [132, 7, 23], "n": 162}], "y1_series": [{"label": "Jun 22", "pct": [81.5, 7.4, 11.1], "counts": [88, 8, 12], "n": 108}, {"label": "Aug 25", "pct": [84.2, 0.0, 15.8], "counts": [16, 0, 3], "n": 19}, {"label": "All festival dates", "pct": [81.9, 6.3, 11.8], "counts": [104, 8, 15], "n": 127}]}, {"title": "14. Do you have any concerns related to trees in public parks?", "options": ["Mess from fallen fruit, leaves, or flowers", "Allergies", "Low visibility (it is difficult to see what is going on)", "Other (write-in)", "None of the above. I have no concerns about trees in public parks"], "y1_options": ["Mess from fallen fruit, leaves, or flowers", "Allergies", "Low visibility (it is difficult to see what is going on)", "Other (write-in)", "None of the above. I have no concerns about trees in public parks"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [12.3, 24.1, 11.7, 1.9, 58.6], "counts": [20, 39, 19, 3, 95], "n": 176}], "y1_series": [{"label": "Jun 22", "pct": [17.9, 25.6, 9.4, 2.6, 44.4], "counts": [21, 30, 11, 3, 52], "n": 117}, {"label": "Aug 25", "pct": [10.5, 0.0, 5.3, 0.0, 84.2], "counts": [2, 0, 1, 0, 16], "n": 19}, {"label": "All festival dates", "pct": [16.9, 22.1, 8.8, 2.2, 50.0], "counts": [23, 30, 12, 3, 68], "n": 136}]}, {"title": "15. Do you think it would be more enjoyable to spend time on Farish Street if there was a park or green space to visit?", "options": ["Yes", "Maybe", "No"], "y1_options": ["Yes", "Maybe", "No"], "y2_series": [{"label": "Year 2 (all respondents)", "pct": [80.2, 18.5, 1.2], "counts": [130, 30, 2], "n": 162}], "y1_series": [{"label": "Jun 22", "pct": [86.1, 13.0, 0.9], "counts": [93, 14, 1], "n": 108}, {"label": "Aug 25", "pct": [68.4, 26.3, 5.3], "counts": [13, 5, 1], "n": 19}, {"label": "All festival dates", "pct": [83.5, 15.0, 1.6], "counts": [106, 19, 2], "n": 127}]}]}};
+const SV_RAW    = [{"section": "Socio-Demographics", "question": "1. What is your age", "option": "Under 18", "y2_count": 0, "y2_pct": 0.0, "y1_count": 0, "y1_pct": 0.0}, {"section": "Socio-Demographics", "question": "1. What is your age", "option": "18-34", "y2_count": 48, "y2_pct": 29.6, "y1_count": 35, "y1_pct": 27.6}, {"section": "Socio-Demographics", "question": "1. What is your age", "option": "35-59", "y2_count": 94, "y2_pct": 58.0, "y1_count": 72, "y1_pct": 56.7}, {"section": "Socio-Demographics", "question": "1. What is your age", "option": "60+", "y2_count": 20, "y2_pct": 12.3, "y1_count": 20, "y1_pct": 15.7}, {"section": "Socio-Demographics", "question": "2. How long have you lived in Jackson?", "option": "<1 year", "y2_count": 4, "y2_pct": 2.5, "y1_count": 1, "y1_pct": 0.8}, {"section": "Socio-Demographics", "question": "2. How long have you lived in Jackson?", "option": "1-5 years", "y2_count": 16, "y2_pct": 9.9, "y1_count": 12, "y1_pct": 9.4}, {"section": "Socio-Demographics", "question": "2. How long have you lived in Jackson?", "option": ">5 years", "y2_count": 48, "y2_pct": 29.6, "y1_count": 54, "y1_pct": 42.5}, {"section": "Socio-Demographics", "question": "2. How long have you lived in Jackson?", "option": "all my life", "y2_count": 94, "y2_pct": 58.0, "y1_count": 60, "y1_pct": 47.2}, {"section": "Socio-Demographics", "question": "2. How long have you lived in Jackson?", "option": "I do not live in Jackson", "y2_count": 0, "y2_pct": 0.0, "y1_count": 0, "y1_pct": 0.0}, {"section": "Socio-Demographics", "question": "3. What is your race/ethnicity?", "option": "African American/ Black", "y2_count": 157, "y2_pct": 95.2, "y1_count": 114, "y1_pct": 89.1}, {"section": "Socio-Demographics", "question": "3. What is your race/ethnicity?", "option": "American Indian/ Alaska Native", "y2_count": 1, "y2_pct": 0.6, "y1_count": 2, "y1_pct": 1.6}, {"section": "Socio-Demographics", "question": "3. What is your race/ethnicity?", "option": "Asian", "y2_count": 0, "y2_pct": 0.0, "y1_count": 1, "y1_pct": 0.8}, {"section": "Socio-Demographics", "question": "3. What is your race/ethnicity?", "option": "Native Hawaiian/ Pacific Islander", "y2_count": 0, "y2_pct": 0.0, "y1_count": 0, "y1_pct": 0.0}, {"section": "Socio-Demographics", "question": "3. What is your race/ethnicity?", "option": "Hispanic/ Latine", "y2_count": 1, "y2_pct": 0.6, "y1_count": 0, "y1_pct": 0.0}, {"section": "Socio-Demographics", "question": "3. What is your race/ethnicity?", "option": "White", "y2_count": 4, "y2_pct": 2.4, "y1_count": 2, "y1_pct": 1.6}, {"section": "Socio-Demographics", "question": "3. What is your race/ethnicity?", "option": "Other", "y2_count": 1, "y2_pct": 0.6, "y1_count": 4, "y1_pct": 3.1}, {"section": "Socio-Demographics", "question": "3. What is your race/ethnicity?", "option": "No Response", "y2_count": 1, "y2_pct": 0.6, "y1_count": 5, "y1_pct": 3.9}, {"section": "Socio-Demographics", "question": "4. What is your yearly household income?", "option": "$0- $25,000", "y2_count": 20, "y2_pct": 12.3, "y1_count": 18, "y1_pct": 14.2}, {"section": "Socio-Demographics", "question": "4. What is your yearly household income?", "option": "$25,000- $45,000", "y2_count": 52, "y2_pct": 32.1, "y1_count": 38, "y1_pct": 29.9}, {"section": "Socio-Demographics", "question": "4. What is your yearly household income?", "option": ">$45,000", "y2_count": 79, "y2_pct": 48.8, "y1_count": 54, "y1_pct": 42.5}, {"section": "Socio-Demographics", "question": "4. What is your yearly household income?", "option": "I don't know", "y2_count": 10, "y2_pct": 6.2, "y1_count": 11, "y1_pct": 8.7}, {"section": "Socio-Demographics", "question": "4. What is your yearly household income?", "option": "No response", "y2_count": 1, "y2_pct": 0.6, "y1_count": 6, "y1_pct": 4.7}, {"section": "Comfort & Heat Impacts", "question": "5. Did you participate in any outdoor events on Farish Street last summer?", "option": "Yes", "y2_count": 97, "y2_pct": 59.9, "y1_count": 74, "y1_pct": 58.3}, {"section": "Comfort & Heat Impacts", "question": "5. Did you participate in any outdoor events on Farish Street last summer?", "option": "No", "y2_count": 64, "y2_pct": 39.5, "y1_count": 50, "y1_pct": 39.4}, {"section": "Comfort & Heat Impacts", "question": "5. Did you participate in any outdoor events on Farish Street last summer?", "option": "I don't know", "y2_count": 1, "y2_pct": 0.6, "y1_count": 3, "y1_pct": 2.4}, {"section": "Comfort & Heat Impacts", "question": "6. Were you more, less, or equally comfortable with the heat and humidity on Farish Street last year?", "option": "Was more comfortable last year", "y2_count": 19, "y2_pct": 11.7, "y1_count": 11, "y1_pct": 14.9}, {"section": "Comfort & Heat Impacts", "question": "6. Were you more, less, or equally comfortable with the heat and humidity on Farish Street last year?", "option": "Was equally comfotable to last year", "y2_count": 47, "y2_pct": 28.9, "y1_count": 32, "y1_pct": 43.2}, {"section": "Comfort & Heat Impacts", "question": "6. Were you more, less, or equally comfortable with the heat and humidity on Farish Street last year?", "option": "Was less comfortable last year", "y2_count": 26, "y2_pct": 16.0, "y1_count": 26, "y1_pct": 35.1}, {"section": "Comfort & Heat Impacts", "question": "6. Were you more, less, or equally comfortable with the heat and humidity on Farish Street last year?", "option": "I don't know", "y2_count": 5, "y2_pct": 3.1, "y1_count": 5, "y1_pct": 6.8}, {"section": "Comfort & Heat Impacts", "question": "6. Were you more, less, or equally comfortable with the heat and humidity on Farish Street last year?", "option": "Blank", "y2_count": 65, "y2_pct": 40.0, "y1_count": null, "y1_pct": null}, {"section": "Comfort & Heat Impacts", "question": "6. Were you more, less, or equally comfortable with the heat and humidity on Farish Street last year?", "option": "Was more comfortable last year", "y2_count": 0, "y2_pct": 0.1, "y1_count": null, "y1_pct": null}, {"section": "Comfort & Heat Impacts", "question": "6. Were you more, less, or equally comfortable with the heat and humidity on Farish Street last year?", "option": "Was equally comfotable to last year", "y2_count": 0, "y2_pct": 0.2, "y1_count": null, "y1_pct": null}, {"section": "Comfort & Heat Impacts", "question": "6. Were you more, less, or equally comfortable with the heat and humidity on Farish Street last year?", "option": "Was less comfortable last year", "y2_count": 0, "y2_pct": 0.1, "y1_count": null, "y1_pct": null}, {"section": "Comfort & Heat Impacts", "question": "6. Were you more, less, or equally comfortable with the heat and humidity on Farish Street last year?", "option": "I don't know", "y2_count": 0, "y2_pct": 0.0, "y1_count": null, "y1_pct": null}, {"section": "Comfort & Heat Impacts", "question": "7. Considering the combination of heat and humidity, how does it feel to be outside on Farish Street today?", "option": "I enjoy the heat and humidity", "y2_count": 28, "y2_pct": 17.3, "y1_count": 18, "y1_pct": 10.5}, {"section": "Comfort & Heat Impacts", "question": "7. Considering the combination of heat and humidity, how does it feel to be outside on Farish Street today?", "option": "The heat and humidity do not bother me", "y2_count": 68, "y2_pct": 42.0, "y1_count": 35, "y1_pct": 20.5}, {"section": "Comfort & Heat Impacts", "question": "7. Considering the combination of heat and humidity, how does it feel to be outside on Farish Street today?", "option": "The heat and humidity make me feel uncomfortable", "y2_count": 44, "y2_pct": 27.2, "y1_count": 45, "y1_pct": 26.3}, {"section": "Comfort & Heat Impacts", "question": "7. Considering the combination of heat and humidity, how does it feel to be outside on Farish Street today?", "option": "The heat and humidity make me feel tired", "y2_count": 39, "y2_pct": 24.1, "y1_count": 40, "y1_pct": 23.4}, {"section": "Comfort & Heat Impacts", "question": "7. Considering the combination of heat and humidity, how does it feel to be outside on Farish Street today?", "option": "The heat and humidity make me feel sick", "y2_count": 10, "y2_pct": 6.2, "y1_count": 18, "y1_pct": 10.5}, {"section": "Comfort & Heat Impacts", "question": "7. Considering the combination of heat and humidity, how does it feel to be outside on Farish Street today?", "option": "The heat and humidity make me feel unsafe", "y2_count": 4, "y2_pct": 2.5, "y1_count": 11, "y1_pct": 6.4}, {"section": "Comfort & Heat Impacts", "question": "7. Considering the combination of heat and humidity, how does it feel to be outside on Farish Street today?", "option": "Other (write-in)", "y2_count": 3, "y2_pct": 1.9, "y1_count": 4, "y1_pct": 2.3}, {"section": "Decision Making", "question": "More shade", "option": "This would not affect my decision to attend next summer", "y2_count": 54, "y2_pct": 33.3, "y1_count": 32, "y1_pct": 25.2}, {"section": "Decision Making", "question": "More shade", "option": "This would increase the chances of me attending next summer", "y2_count": 95, "y2_pct": 58.6, "y1_count": 71, "y1_pct": 55.9}, {"section": "Decision Making", "question": "More shade", "option": "This would be required for me to attend next summer", "y2_count": 9, "y2_pct": 5.6, "y1_count": 14, "y1_pct": 11.0}, {"section": "Decision Making", "question": "More shade", "option": "I don't know", "y2_count": 4, "y2_pct": 2.5, "y1_count": 10, "y1_pct": 7.9}, {"section": "Decision Making", "question": "A place to sit down", "option": "This would not affect my decision to attend next summer", "y2_count": 48, "y2_pct": 29.6, "y1_count": 34, "y1_pct": 26.8}, {"section": "Decision Making", "question": "A place to sit down", "option": "This would increase the chances of me attending next summer", "y2_count": 94, "y2_pct": 58.0, "y1_count": 72, "y1_pct": 56.7}, {"section": "Decision Making", "question": "A place to sit down", "option": "This would be required for me to attend next summer", "y2_count": 9, "y2_pct": 5.6, "y1_count": 17, "y1_pct": 13.4}, {"section": "Decision Making", "question": "A place to sit down", "option": "I don't know", "y2_count": 11, "y2_pct": 6.8, "y1_count": 4, "y1_pct": 3.1}, {"section": "Decision Making", "question": "Outdoor fans", "option": "This would not affect my decision to attend next summer", "y2_count": 40, "y2_pct": 24.7, "y1_count": 29, "y1_pct": 22.8}, {"section": "Decision Making", "question": "Outdoor fans", "option": "This would increase the chances of me attending next summer", "y2_count": 100, "y2_pct": 61.7, "y1_count": 70, "y1_pct": 55.1}, {"section": "Decision Making", "question": "Outdoor fans", "option": "This would be required for me to attend next summer", "y2_count": 16, "y2_pct": 9.9, "y1_count": 20, "y1_pct": 15.7}, {"section": "Decision Making", "question": "Outdoor fans", "option": "I don't know", "y2_count": 6, "y2_pct": 3.7, "y1_count": 8, "y1_pct": 6.3}, {"section": "Decision Making", "question": "Misters that spray you with cool mist", "option": "This would not affect my decision to attend next summer", "y2_count": 45, "y2_pct": 27.8, "y1_count": 30, "y1_pct": 23.6}, {"section": "Decision Making", "question": "Misters that spray you with cool mist", "option": "This would increase the chances of me attending next summer", "y2_count": 99, "y2_pct": 61.1, "y1_count": 70, "y1_pct": 55.1}, {"section": "Decision Making", "question": "Misters that spray you with cool mist", "option": "This would be required for me to attend next summer", "y2_count": 10, "y2_pct": 6.2, "y1_count": 19, "y1_pct": 15.0}, {"section": "Decision Making", "question": "Misters that spray you with cool mist", "option": "I don't know", "y2_count": 8, "y2_pct": 4.9, "y1_count": 8, "y1_pct": 6.3}, {"section": "Decision Making", "question": "Indoor space with air conditioning", "option": "This would not affect my decision to attend next summer", "y2_count": 37, "y2_pct": 22.8, "y1_count": 32, "y1_pct": 25.2}, {"section": "Decision Making", "question": "Indoor space with air conditioning", "option": "This would increase the chances of me attending next summer", "y2_count": 103, "y2_pct": 63.6, "y1_count": 68, "y1_pct": 53.5}, {"section": "Decision Making", "question": "Indoor space with air conditioning", "option": "This would be required for me to attend next summer", "y2_count": 10, "y2_pct": 6.2, "y1_count": 14, "y1_pct": 11.0}, {"section": "Decision Making", "question": "Indoor space with air conditioning", "option": "I don't know", "y2_count": 12, "y2_pct": 7.4, "y1_count": 13, "y1_pct": 10.2}, {"section": "Decision Making", "question": "Free bottled water or other cold drinks", "option": "This would not affect my decision to attend next summer", "y2_count": 40, "y2_pct": 24.7, "y1_count": 32, "y1_pct": 25.2}, {"section": "Decision Making", "question": "Free bottled water or other cold drinks", "option": "This would increase the chances of me attending next summer", "y2_count": 103, "y2_pct": 63.6, "y1_count": 67, "y1_pct": 52.8}, {"section": "Decision Making", "question": "Free bottled water or other cold drinks", "option": "This would be required for me to attend next summer", "y2_count": 13, "y2_pct": 8.0, "y1_count": 18, "y1_pct": 14.2}, {"section": "Decision Making", "question": "Free bottled water or other cold drinks", "option": "I don't know", "y2_count": 6, "y2_pct": 3.7, "y1_count": 10, "y1_pct": 7.9}, {"section": "Decision Making", "question": "9. Do you ever decide to stay home from outdoor events because it is too hot outside?", "option": "Yes", "y2_count": 99, "y2_pct": 61.1, "y1_count": 94, "y1_pct": 74.0}, {"section": "Decision Making", "question": "9. Do you ever decide to stay home from outdoor events because it is too hot outside?", "option": "No", "y2_count": 53, "y2_pct": 32.7, "y1_count": 31, "y1_pct": 24.4}, {"section": "Decision Making", "question": "9. Do you ever decide to stay home from outdoor events because it is too hot outside?", "option": "I don't know", "y2_count": 10, "y2_pct": 6.2, "y1_count": 2, "y1_pct": 1.6}, {"section": "Green Space Perceptions", "question": "11. Are you more likely to spend time outside in the summer if you have a green space to go to, like a park, garden, or a grassy field?", "option": "Yes", "y2_count": 121, "y2_pct": 74.7, "y1_count": 102, "y1_pct": 80.3}, {"section": "Green Space Perceptions", "question": "11. Are you more likely to spend time outside in the summer if you have a green space to go to, like a park, garden, or a grassy field?", "option": "No", "y2_count": 21, "y2_pct": 13.0, "y1_count": 10, "y1_pct": 7.9}, {"section": "Green Space Perceptions", "question": "11. Are you more likely to spend time outside in the summer if you have a green space to go to, like a park, garden, or a grassy field?", "option": "I don't know/ neither", "y2_count": 20, "y2_pct": 12.3, "y1_count": 15, "y1_pct": 11.8}, {"section": "Green Space Perceptions", "question": "13. Do you prefer parks and green spaces in Jackson with or without trees?", "option": "With trees", "y2_count": 132, "y2_pct": 81.5, "y1_count": 104, "y1_pct": 81.9}, {"section": "Green Space Perceptions", "question": "13. Do you prefer parks and green spaces in Jackson with or without trees?", "option": "Without trees", "y2_count": 7, "y2_pct": 4.3, "y1_count": 8, "y1_pct": 6.3}, {"section": "Green Space Perceptions", "question": "13. Do you prefer parks and green spaces in Jackson with or without trees?", "option": "No preference", "y2_count": 23, "y2_pct": 14.2, "y1_count": 15, "y1_pct": 11.8}, {"section": "Green Space Perceptions", "question": "14. Do you have any concerns related to trees in public parks?", "option": "Mess from fallen fruit, leaves, or flowers", "y2_count": 20, "y2_pct": 12.3, "y1_count": 23, "y1_pct": 16.9}, {"section": "Green Space Perceptions", "question": "14. Do you have any concerns related to trees in public parks?", "option": "Allergies", "y2_count": 39, "y2_pct": 24.1, "y1_count": 30, "y1_pct": 22.1}, {"section": "Green Space Perceptions", "question": "14. Do you have any concerns related to trees in public parks?", "option": "Low visibility (it is difficult to see what is going on)", "y2_count": 19, "y2_pct": 11.7, "y1_count": 12, "y1_pct": 8.8}, {"section": "Green Space Perceptions", "question": "14. Do you have any concerns related to trees in public parks?", "option": "Other (write-in)", "y2_count": 3, "y2_pct": 1.9, "y1_count": 3, "y1_pct": 2.2}, {"section": "Green Space Perceptions", "question": "14. Do you have any concerns related to trees in public parks?", "option": "None of the above. I have no concerns about trees in public parks", "y2_count": 95, "y2_pct": 58.6, "y1_count": 68, "y1_pct": 50.0}, {"section": "Green Space Perceptions", "question": "15. Do you think it would be more enjoyable to spend time on Farish Street if there was a park or green space to visit?", "option": "Yes", "y2_count": 130, "y2_pct": 80.2, "y1_count": 106, "y1_pct": 83.5}, {"section": "Green Space Perceptions", "question": "15. Do you think it would be more enjoyable to spend time on Farish Street if there was a park or green space to visit?", "option": "Maybe", "y2_count": 30, "y2_pct": 18.5, "y1_count": 19, "y1_pct": 15.0}, {"section": "Green Space Perceptions", "question": "15. Do you think it would be more enjoyable to spend time on Farish Street if there was a park or green space to visit?", "option": "No", "y2_count": 2, "y2_pct": 1.2, "y1_count": 2, "y1_pct": 1.6}];
+const SV_CHANGE = [{"sheet": "SocioDem", "title": "1. What is your age", "options": ["Under 18", "18-34", "35-59", "60+"], "year1_pct": [0.0, 27.6, 56.7, 15.7], "year2_pct": [0.0, 29.6, 58.0, 12.3], "delta_pct_points": [0.0, 2.1, 1.3, -3.4]}, {"sheet": "SocioDem", "title": "2. How long have you lived in Jackson?", "options": ["<1 year", "1-5 years", ">5 years", "all my life", "I do not live in Jackson"], "year1_pct": [0.8, 9.4, 42.5, 47.2, 0.0], "year2_pct": [2.5, 9.9, 29.6, 58.0, 0.0], "delta_pct_points": [1.7, 0.4, -12.9, 10.8, 0.0]}, {"sheet": "SocioDem", "title": "3. What is your race/ethnicity?", "options": ["African American/ Black", "American Indian/ Alaska Native", "Asian", "Native Hawaiian/ Pacific Islander", "Hispanic/ Latino", "White", "Other", "No Response"], "year1_pct": [89.1, 1.6, 0.8, 0.0, 0.0, 1.6, 3.1, 3.9], "year2_pct": [95.2, 0.6, 0.0, 0.0, 0.6, 2.4, 0.6, 0.6], "delta_pct_points": [6.1, -1.0, -0.8, 0.0, 0.6, 0.9, -2.5, -3.3]}, {"sheet": "SocioDem", "title": "4. What is your yearly household income?", "options": ["$0- $25,000", "$25,000- $45,000", ">$45,000", "I don't know", "No response"], "year1_pct": [14.2, 29.9, 42.5, 8.7, 4.7], "year2_pct": [12.3, 32.1, 48.8, 6.2, 0.6], "delta_pct_points": [-1.8, 2.2, 6.2, -2.5, -4.1]}, {"sheet": "Comfortability", "title": "5. Did you participate in any outdoor events on Farish Street last summer?", "options": ["Yes", "No", "I don't know"], "year1_pct": [58.3, 39.4, 2.4], "year2_pct": [59.9, 39.5, 0.6], "delta_pct_points": [1.6, 0.1, -1.7]}, {"sheet": "Comfortability", "title": "6. Were you more, less, or equally comfortable with the heat and humidity on Far", "options": ["Was more comfortable last year", "Was equally comfotable to last year", "Was less comfortable last year", "I don't know"], "year1_pct": [14.9, 43.2, 35.1, 6.8], "year2_pct": [11.7, 28.9, 16.0, 3.1], "delta_pct_points": [-3.2, -14.3, -19.1, -3.7]}, {"sheet": "Comfortability", "title": "7. Considering the combination of heat and humidity, how does it feel to be outs", "options": ["I enjoy the heat and humidity", "The heat and humidity do not bother me", "The heat and humidity make me feel uncomfortable", "The heat and humidity make me feel tired", "The heat and humidity make me feel sick", "The heat and humidity make me feel unsafe", "Other (write-in)"], "year1_pct": [10.5, 20.5, 26.3, 23.4, 10.5, 6.4, 2.3], "year2_pct": [14.3, 34.7, 22.4, 19.9, 5.1, 2.0, 1.5], "delta_pct_points": [3.8, 14.2, -3.9, -3.5, -5.4, -4.4, -0.8]}, {"sheet": "Decision Making", "title": "More shade · Multi-matrix question 8. If cooling resources were available, how would that aff", "options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "year1_pct": [25.2, 55.9, 11.0, 7.9], "year2_pct": [33.3, 58.6, 5.6, 2.5], "delta_pct_points": [8.1, 2.7, -5.5, -5.4]}, {"sheet": "Decision Making", "title": "A place to sit down · Multi-matrix question 8. If cooling resources were available, how would that aff", "options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "year1_pct": [26.8, 56.7, 13.4, 3.1], "year2_pct": [29.6, 58.0, 5.6, 6.8], "delta_pct_points": [2.9, 1.3, -7.8, 3.6]}, {"sheet": "Decision Making", "title": "Outdoor fans · Multi-matrix question 8. If cooling resources were available, how would that aff", "options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "year1_pct": [22.8, 55.1, 15.7, 6.3], "year2_pct": [24.7, 61.7, 9.9, 3.7], "delta_pct_points": [1.9, 6.6, -5.9, -2.6]}, {"sheet": "Decision Making", "title": "Misters that spray you with cool mist · Multi-matrix question 8. If cooling resources were available, how would that aff", "options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "year1_pct": [23.6, 55.1, 15.0, 6.3], "year2_pct": [27.8, 61.1, 6.2, 4.9], "delta_pct_points": [4.2, 6.0, -8.8, -1.4]}, {"sheet": "Decision Making", "title": "Indoor space with air conditioning · Multi-matrix question 8. If cooling resources were available, how would that aff", "options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "year1_pct": [25.2, 53.5, 11.0, 10.2], "year2_pct": [22.8, 63.6, 6.2, 7.4], "delta_pct_points": [-2.4, 10.0, -4.9, -2.8]}, {"sheet": "Decision Making", "title": "Free bottled water or other cold drinks · Multi-matrix question 8. If cooling resources were available, how would that aff", "options": ["This would not affect my decision to attend next summer", "This would increase the chances of me attending next summer", "This would be required for me to attend next summer", "I don't know"], "year1_pct": [25.2, 52.8, 14.2, 7.9], "year2_pct": [24.7, 63.6, 8.0, 3.7], "delta_pct_points": [-0.5, 10.8, -6.1, -4.2]}, {"sheet": "Decision Making", "title": "9. Do you ever decide to stay home from outdoor events because it is too hot out", "options": ["Yes", "No", "I don't know"], "year1_pct": [74.0, 24.4, 1.6], "year2_pct": [61.1, 32.7, 6.2], "delta_pct_points": [-12.9, 8.3, 4.6]}, {"sheet": "Green Spaces", "title": "11. Are you more likely to spend time outside in the summer if you have a green ", "options": ["Yes", "No", "I don't know/ neither"], "year1_pct": [80.3, 7.9, 11.8], "year2_pct": [74.7, 13.0, 12.3], "delta_pct_points": [-5.6, 5.1, 0.5]}, {"sheet": "Green Spaces", "title": "13. Do you prefer parks and green spaces in Jackson with or without trees?", "options": ["With trees", "Without trees", "no preference"], "year1_pct": [81.9, 6.3, 11.8], "year2_pct": [81.5, 4.3, 14.2], "delta_pct_points": [-0.4, -2.0, 2.4]}, {"sheet": "Green Spaces", "title": "14. Do you have any concerns related to trees in public parks?", "options": ["Mess from fallen fruit, leaves, or flowers", "Allergies", "Low visibility (it is difficult to see what is going on)", "Other (write-in)", "None of the above. I have no concerns about trees in public parks"], "year1_pct": [16.9, 22.1, 8.8, 2.2, 50.0], "year2_pct": [11.4, 22.2, 10.8, 1.7, 54.0], "delta_pct_points": [-5.5, 0.1, 2.0, -0.5, 4.0]}, {"sheet": "Green Spaces", "title": "15. Do you think it would be more enjoyable to spend time on Farish Street if th", "options": ["Yes", "Maybe", "No"], "year1_pct": [83.5, 15.0, 1.6], "year2_pct": [80.2, 18.5, 1.2], "delta_pct_points": [-3.2, 3.6, -0.3]}];
+const SV_SHEET_MAP = {"sv-sociodem": {"key": "SocioDem", "label": "Socio-Demographics"}, "sv-comfortability": {"key": "Comfortability", "label": "Comfort & Heat Impacts"}, "sv-decision": {"key": "Decision Making", "label": "Decision Making"}, "sv-green": {"key": "Green Spaces", "label": "Green Space Perceptions"}};
+const SV_TABS = ['sv-sociodem','sv-comfortability','sv-decision','sv-green','sv-rawdata'];
+const SVC1='#6B9CCC', SVC2='#197A80', SVC3='#6C72B6',
+      SVCY2='#197A80', SVCY2C='#C0504D';
+let svViewMode = 'y2';
+
+function svSetView(mode) {
+  svViewMode = mode;
+  ['y2','y1','compare'].forEach(function(m) {
+    const b = document.getElementById('sv-vbtn-'+m);
+    if (b) b.classList.toggle('active', m === mode);
+  });
+  // Re-render current survey tab
+  const activeSvTab = SV_TABS.find(function(t) {
+    const el = document.getElementById('tab-'+t);
+    return el && el.classList.contains('active');
+  });
+  if (activeSvTab && activeSvTab !== 'sv-rawdata') svRenderTab(activeSvTab);
+}
+
+function svRenderTab(tabId) {
+  if (tabId === 'sv-rawdata') { svRenderRawData(); return; }
+  const info = SV_SHEET_MAP[tabId];
+  if (!info) return;
+  const sheet = SV_DATA[info.key];
+  if (!sheet) return;
+  const panel = document.getElementById('tab-' + tabId);
+  if (!panel) return;
+
+  if (!panel.dataset.built) {
+    panel.dataset.built = '1';
+    let h = '<div class="sv-view-bar">' +
+      '<span style="font-size:12px;font-weight:600;color:var(--muted);margin-right:4px">View:</span>' +
+      '<button class="sv-vbtn active" id="sv-vbtn-y2" onclick="svSetView('y2')">Year 2</button>' +
+      '<button class="sv-vbtn" id="sv-vbtn-y1" onclick="svSetView('y1')">Year 1</button>' +
+      '<button class="sv-vbtn" id="sv-vbtn-compare" onclick="svSetView('compare')">Y1 vs Y2</button>' +
+      '</div>' +
+      '<div class="sv-legend-row">' +
+      '<span><span class="swatch" style="background:'+SVC1+'"></span>June 22 (Y1)</span>' +
+      '<span><span class="swatch" style="background:'+SVC2+'"></span>Aug 25 (Y1)</span>' +
+      '<span><span class="swatch" style="background:'+SVC3+'"></span>All festival dates (Y1)</span>' +
+      '<span><span class="swatch" style="background:'+SVCY2+'"></span>Year 2 (n≈162)</span>' +
+      '<span><span class="swatch" style="background:'+SVCY2C+'"></span>Y2 in comparisons</span>' +
+      '</div>';
+    sheet.questions.forEach(function(q, qi) {
+      const cid = 'svchart-' + tabId.replace(/-/g,'_') + '-' + qi;
+      h += '<div class="sv-chart-card">' +
+           '<p class="sv-chart-title">' + svEsc(q.title) + '</p>' +
+           '<div id="' + cid + '" style="height:320px"></div>' +
+           '</div>';
+    });
+    panel.innerHTML = h;
+  }
+
+  // Fix view button states after re-build
+  ['y2','y1','compare'].forEach(function(m) {
+    const b = document.getElementById('sv-vbtn-'+m);
+    if (b) b.classList.toggle('active', m === svViewMode);
+  });
+
+  sheet.questions.forEach(function(q, qi) {
+    const cid = 'svchart-' + tabId.replace(/-/g,'_') + '-' + qi;
+    const el = document.getElementById(cid);
+    if (!el) return;
+    const traces = svBuildTraces(q);
+    if (!traces.length) { el.innerHTML = '<p style="color:#888;padding:20px">No data for this view.</p>'; return; }
+    const nOpts = traces[0].x ? traces[0].x.length : 4;
+    Plotly.react(cid, traces, {
+      barmode: 'group',
+      xaxis: {
+        title: { text: 'Response', font: { size: 11 }, standoff: 8 },
+        tickfont: { size: 10 }, automargin: true,
+        tickangle: nOpts > 5 ? -28 : 0
+      },
+      yaxis: {
+        title: { text: 'Percent of respondents', font: { size: 11 } },
+        ticksuffix: '%', rangemode: 'tozero',
+        gridcolor: '#e5e5e5', zeroline: false
+      },
+      legend: { orientation: 'h', y: -0.28, font: { size: 11 }, xanchor: 'center', x: 0.5 },
+      margin: { t: 10, b: 85, l: 60, r: 20 },
+      paper_bgcolor: 'white', plot_bgcolor: 'white',
+      height: 320,
+      showlegend: traces.length > 1
+    }, { responsive: true, displayModeBar: false });
+  });
+}
+
+function svBuildTraces(q) {
+  const traces = [];
+  if (svViewMode === 'y2') {
+    q.y2_series.forEach(function(s) {
+      const n = s.n > 0 ? s.n : s.counts.reduce(function(a,b){return a+b;}, 0);
+      traces.push({ type:'bar', name: s.label + (n?' (n='+n+')':''),
+        x: q.options, y: s.pct, marker: { color: SVCY2 },
+        customdata: s.counts,
+        hovertemplate: '<b>%{x}</b><br>%{y:.1f}%  (n=%{customdata})<extra></extra>' });
+    });
+  } else if (svViewMode === 'y1') {
+    const cols = [SVC1, SVC2, SVC3];
+    const opts = q.y1_options && q.y1_options.length ? q.y1_options : q.options;
+    q.y1_series.forEach(function(s, si) {
+      traces.push({ type:'bar', name: s.label,
+        x: opts, y: s.pct, marker: { color: cols[si%3] },
+        customdata: s.counts,
+        hovertemplate: '<b>%{x}</b><br>%{y:.1f}%  (n=%{customdata})<extra></extra>' });
+    });
+  } else {
+    const s1 = q.y1_series.find(function(s){return s.label.toLowerCase().indexOf('all festival')>=0;})
+             ||(q.y1_series.length ? q.y1_series[q.y1_series.length-1] : null);
+    const s2 = q.y2_series.find(function(s){return s.label.toLowerCase().indexOf('all respondents')>=0;})
+             ||(q.y2_series.length ? q.y2_series[0] : null);
+    const opts1 = q.y1_options && q.y1_options.length ? q.y1_options : q.options;
+    if (s1) traces.push({ type:'bar', name:'Year 1 — all festival dates',
+      x: opts1, y: s1.pct, marker: { color: SVC3 },
+      hovertemplate: '<b>%{x}</b><br>Year 1: %{y:.1f}%<extra></extra>' });
+    if (s2) traces.push({ type:'bar', name:'Year 2 — all respondents',
+      x: q.options, y: s2.pct, marker: { color: SVCY2C },
+      hovertemplate: '<b>%{x}</b><br>Year 2: %{y:.1f}%<extra></extra>' });
+  }
+  return traces;
+}
+
+function svRenderRawData() {
+  const panel = document.getElementById('tab-sv-rawdata');
+  if (panel.dataset.built) return;
+  panel.dataset.built = '1';
+  let h = '<input class="sv-search-box" type="text" id="sv-raw-search" placeholder="Search questions, options…" oninput="svFilterRaw()">';
+  h += '<div style="overflow-x:auto"><table class="sv-raw-tbl" id="sv-raw-tbl">';
+  h += '<thead><tr><th>Section</th><th>Question</th><th>Option</th>' +
+       '<th style="text-align:right">Y1 count</th><th style="text-align:right">Y1 %</th>' +
+       '<th style="text-align:right">Y2 count</th><th style="text-align:right">Y2 %</th>' +
+       '<th style="text-align:right">Δ pp</th></tr></thead><tbody>';
+  SV_RAW.forEach(function(r) {
+    const d = (r.y1_pct !== null && r.y2_pct !== null) ? Math.round((r.y2_pct - r.y1_pct) * 10) / 10 : null;
+    const cls = d === null ? '' : d > 0.5 ? 'pos' : d < -0.5 ? 'neg' : '';
+    h += '<tr><td>'+svEsc(r.section)+'</td><td>'+svEsc(r.question)+'</td><td>'+svEsc(r.option)+'</td>' +
+         '<td style="text-align:right">'+(r.y1_count!==null?r.y1_count:'—')+'</td>' +
+         '<td style="text-align:right">'+(r.y1_pct!==null?r.y1_pct+'%':'—')+'</td>' +
+         '<td style="text-align:right">'+(r.y2_count!==null?r.y2_count:'—')+'</td>' +
+         '<td style="text-align:right">'+(r.y2_pct!==null?r.y2_pct+'%':'—')+'</td>' +
+         '<td style="text-align:right" class="'+cls+'">'+(d!==null?(d>0?'+':'')+d:'—')+'</td></tr>';
+  });
+  h += '</tbody></table></div>';
+  panel.innerHTML = h;
+}
+
+function svFilterRaw() {
+  const q = document.getElementById('sv-raw-search').value.toLowerCase();
+  document.querySelectorAll('#sv-raw-tbl tbody tr').forEach(function(r) {
+    r.style.display = r.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+  });
+}
+
+function svEsc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+// ════════════════ END SURVEY ════════════════════════════════════════════════
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const hn = document.getElementById('header-cal');
+  if (hn && DATA.summary && DATA.summary.hobo_calibration_note) {
+    hn.textContent = DATA.summary.hobo_calibration_note;
+  }
+  initialised['overview'] = true;
+  drawOverview();
+});
+</script>
+</body>
+</html>
